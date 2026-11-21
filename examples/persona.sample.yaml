@@ -1,0 +1,7 @@
+﻿persona:
+  name: 山田 太郎（虛構範例）
+  target_role: Tech Lead / PM
+  years: 10
+  highlights:
+    - 範例：主導過微服務化改造，延遲降低 40%
+    - 範例：管理 8 人跨部門團隊

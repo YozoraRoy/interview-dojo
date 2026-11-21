@@ -1,0 +1,41 @@
+﻿# === 機密與個資（絕對不可提交）===
+.env
+.env.*
+!.env.example
+private/
+data/
+recordings/
+transcripts/
+reports/
+*.pem
+*.key
+
+# === 媒體與文件（可能含個人影音/履歷）===
+*.webm
+*.mp4
+*.mkv
+*.wav
+*.mp3
+*.m4a
+*.pdf
+*.docx
+*.sqlite
+*.db
+
+# === 模型與快取 ===
+models/
+*.gguf
+*.onnx
+*.bin
+.cache/
+
+# === 建置產物 ===
+node_modules/
+dist/
+build/
+.venv/
+__pycache__/
+*.pyc
+*.log
+.DS_Store
+Thumbs.db
