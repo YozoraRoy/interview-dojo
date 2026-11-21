@@ -6,6 +6,8 @@ const speedRange = $("speedRange");
 const speedVal = $("speedVal");
 const recBadge = $("recBadge");
 const timerEl = $("timer");
+const turnBadge = $("turnBadge");
+const limitBanner = $("limitBanner");
 const camEl = $("cam");
 const replayEl = $("replay");
 const camOffEl = $("camOff");
@@ -197,6 +199,10 @@ async function sendTurn(body, contentType) {
         } else if (ev === "audio") {
           enqueueAudio(data.wavBase64);
         } else if (ev === "done") {
+          const turns = data.turnCount ?? 0;
+          const maxTurns = data.recommendedMaxTurns ?? 12;
+          turnBadge.textContent = `${turns}/${maxTurns} 輪`;
+          checkLimitNotice(turns, maxTurns);
           statusEl.textContent = "輪到你回答（按住說話，結束後點「結束面試並評分」）";
         } else if (ev === "error") {
           statusEl.textContent = `錯誤：${data.message}`;
@@ -207,6 +213,19 @@ async function sendTurn(body, contentType) {
     busy = false;
     btnTalk.disabled = false;
     btnSend.disabled = false;
+  }
+}
+
+function checkLimitNotice(turns, maxTurns = 12) {
+  const elapsedMin = sessionStartMs ? (Date.now() - sessionStartMs) / 60000 : 0;
+  if (turns >= maxTurns + 2 || elapsedMin >= 22) {
+    limitBanner.textContent =
+      `已進行 ${turns} 輪（${Math.floor(elapsedMin)} 分鐘），接近本地模型 8K Context 與錄影記憶體上限；建議立即按「結束面試並評分」以確保報告品質與不產生幻覺。`;
+    limitBanner.classList.remove("hidden");
+  } else if (turns >= maxTurns - 2 || elapsedMin >= 15) {
+    limitBanner.textContent =
+      `已達建議練習長度（${turns}/${maxTurns} 輪・${Math.floor(elapsedMin)} 分鐘），可準備收尾並按「結束面試並評分」。建議拆成多場 15 分鐘專題練習，效果最佳。`;
+    limitBanner.classList.remove("hidden");
   }
 }
 
@@ -224,6 +243,7 @@ function startFullRecording() {
   recBadge.classList.remove("hidden");
   timerHandle = setInterval(() => {
     timerEl.textContent = formatSec((Date.now() - sessionStartMs) / 1000);
+    checkLimitNotice(Number((turnBadge.textContent.split("/")[0]) || 0));
   }, 1000);
 }
 
@@ -245,6 +265,8 @@ function stopFullRecording() {
 btnStart.addEventListener("click", async () => {
   btnStart.disabled = true;
   reviewPanel.classList.add("hidden");
+  limitBanner.classList.add("hidden");
+  turnBadge.textContent = "0/12 輪";
   replayEl.classList.add("hidden");
   camEl.classList.remove("hidden");
   statusEl.textContent = "開啟鏡頭與麥克風中…";

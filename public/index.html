@@ -10,7 +10,7 @@
   <header>
     <div class="brand">
       interview-dojo <span class="badge">全本地運行</span>
-      <span id="recBadge" class="rec-badge hidden">● REC <span id="timer">00:00</span></span>
+      <span id="recBadge" class="rec-badge hidden">● REC <span id="timer">00:00</span> ｜ <span id="turnBadge">0/12 輪</span></span>
     </div>
     <div class="toolbar">
       <label class="voice-label">
@@ -44,6 +44,7 @@
         <button id="btnFinish" class="btn danger" disabled>結束面試並評分</button>
       </div>
       <div id="status" class="status">待命中</div>
+      <div id="limitBanner" class="limit-banner hidden"></div>
 
       <section id="reviewPanel" class="review-panel hidden">
         <div class="review-header">

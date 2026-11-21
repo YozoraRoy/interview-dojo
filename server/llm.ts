@@ -6,11 +6,26 @@ export interface ChatMessage {
   content: string;
 }
 
+/**
+ * 保留 system prompt 與最近 maxPairs 輪對話，避免長面試撐爆 8192 context
+ * 而擠掉角色設定或造成 VRAM KV-cache 溢位。
+ */
+export function trimMessagesForLive(
+  messages: ChatMessage[],
+  maxPairs = 12,
+): ChatMessage[] {
+  if (messages.length <= 1 + maxPairs * 2) return messages;
+  const [system, ...rest] = messages;
+  if (system?.role !== "system") return messages.slice(-maxPairs * 2);
+  return [system, ...rest.slice(-maxPairs * 2)];
+}
+
 /** 呼叫 Ollama 串流對話，逐片段 yield 文字。 */
 export async function* streamChat(
   messages: ChatMessage[],
   signal?: AbortSignal,
 ): AsyncGenerator<string> {
+  const windowed = trimMessagesForLive(messages);
   const res = await fetch(`${config.ollamaBaseUrl}/api/chat`, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -19,7 +34,7 @@ export async function* streamChat(
       stream: true,
       think: false,
       options: { num_ctx: config.numCtx, temperature: 0.6 },
-      messages,
+      messages: windowed,
     }),
     signal,
   });

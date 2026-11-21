@@ -167,7 +167,14 @@ app.post(
         offsetSec: assistantOffsetSec,
       });
       await saveSession(session);
-      sendSse(res, "done", { fullText: fullReply.trim(), offsetSec: assistantOffsetSec });
+      // 扣除 system 與開場觸發指令，計算實際面試問答輪數
+      const turnCount = Math.max(0, session.messages.filter((m) => m.role === "user").length - 1);
+      sendSse(res, "done", {
+        fullText: fullReply.trim(),
+        offsetSec: assistantOffsetSec,
+        turnCount,
+        recommendedMaxTurns: 12,
+      });
     } catch (err) {
       if (!ac.signal.aborted) {
         const msg = err instanceof Error ? err.message : String(err);
