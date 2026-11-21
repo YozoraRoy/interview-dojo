@@ -1,9 +1,10 @@
 import express from "express";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { randomUUID } from "node:crypto";
 import { config } from "./config.ts";
+import { renderHtmlReport } from "./export.ts";
 import { generateReview, streamChat, unloadModel } from "./llm.ts";
 import { computeMetrics, type TurnEntry } from "./metrics.ts";
 import { buildSystemPrompt, loadPersona } from "./persona.ts";
@@ -231,6 +232,46 @@ app.post("/api/session/:id/review", async (req, res) => {
     const msg = err instanceof Error ? err.message : String(err);
     res.status(500).json({ error: msg });
   }
+});
+
+// 匯出整合對話紀錄與評分結果的單一 HTML 報告
+app.get("/api/session/:id/export", async (req, res) => {
+  const id = req.params.id;
+  if (!isValidId(id)) {
+    res.status(400).json({ error: "無效的場次 ID" });
+    return;
+  }
+
+  let session = sessions.get(id);
+  if (!session) {
+    try {
+      const raw = await readFile(join(config.privateDataDir, "sessions", `${id}.json`), "utf8");
+      session = JSON.parse(raw) as Session;
+    } catch {
+      res.status(404).json({ error: "找不到面試場次" });
+      return;
+    }
+  }
+
+  let report = "";
+  try {
+    report = await readFile(join(config.privateDataDir, "reports", `${id}.md`), "utf8");
+  } catch {
+    // 尚未產生評分報告時仍可匯出對話紀錄
+  }
+
+  const metrics = computeMetrics(session.messages);
+  const html = renderHtmlReport({
+    sessionId: session.id,
+    createdAt: session.createdAt,
+    metrics,
+    turns: session.messages,
+    report,
+  });
+
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.setHeader("Content-Disposition", `attachment; filename="interview-report-${id}.html"`);
+  res.send(html);
 });
 
 app.listen(config.port, config.host, () => {

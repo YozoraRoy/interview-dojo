@@ -22,6 +22,7 @@ const btnSend = $("btnSend");
 const reviewPanel = $("reviewPanel");
 const metricsBar = $("metricsBar");
 const reviewBody = $("reviewBody");
+const btnExport = $("btnExport");
 const footerCredit = $("footerCredit");
 
 let sessionId = null;
@@ -373,6 +374,10 @@ textForm.addEventListener("submit", async (e) => {
 speakerSelect.addEventListener("change", updateCredit);
 speedRange.addEventListener("input", () => {
   speedVal.textContent = Number(speedRange.value).toFixed(2);
+});
+btnExport.addEventListener("click", () => {
+  if (!sessionId) return;
+  window.location.href = `/api/session/${sessionId}/export`;
 });
 
 loadSpeakers();
