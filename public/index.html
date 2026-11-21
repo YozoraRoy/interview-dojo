@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>interview-dojo — 本地日文模擬面試</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <div class="brand">interview-dojo <span class="badge">全本地運行</span></div>
+    <div id="health" class="health">檢查服務中…</div>
+  </header>
+
+  <main>
+    <section class="stage">
+      <div class="video-box">
+        <video id="cam" autoplay muted playsinline></video>
+        <div id="camOff" class="cam-off">尚未開啟鏡頭（點擊「開始面試」授權）</div>
+      </div>
+
+      <div class="interviewer-bar">
+        <div class="avatar" id="avatar">官</div>
+        <div class="subtitle" id="subtitle">點擊「開始面試」，面試官會以日文開場。</div>
+      </div>
+
+      <div class="controls">
+        <button id="btnStart" class="btn primary">開始面試</button>
+        <button id="btnTalk" class="btn talk" disabled>按住說話（或按住空白鍵）</button>
+      </div>
+      <div id="status" class="status">待命中</div>
+    </section>
+
+    <aside class="transcript-panel">
+      <h2>對話紀錄</h2>
+      <div id="log" class="log"></div>
+      <form id="textForm" class="text-form">
+        <input id="textInput" type="text" placeholder="備用：也可以直接輸入日文送出…" disabled />
+        <button id="btnSend" type="submit" disabled>送出</button>
+      </form>
+    </aside>
+  </main>
+
+  <footer>
+    音訊由 VOICEVOX 合成（使用預設角色時請標示：VOICEVOX:ずんだもん）｜所有資料僅存本機
+  </footer>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

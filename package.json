@@ -1,0 +1,17 @@
+{
+  "name": "interview-dojo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "全本地 AI 日文模擬面試（Ollama + faster-whisper + VOICEVOX）",
+  "license": "MIT",
+  "engines": { "node": ">=24" },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server/index.ts",
+    "test": "node --test server/"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "yaml": "^2.8.0"
+  }
+}
