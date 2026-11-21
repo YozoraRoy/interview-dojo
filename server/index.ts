@@ -1,20 +1,27 @@
 import express from "express";
 import { mkdir, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { existsSync } from "node:fs";
+import { join, resolve } from "node:path";
 import { randomUUID } from "node:crypto";
 import { config } from "./config.ts";
-import { streamChat, type ChatMessage } from "./llm.ts";
+import { generateReview, streamChat, unloadModel } from "./llm.ts";
+import { computeMetrics, type TurnEntry } from "./metrics.ts";
 import { buildSystemPrompt, loadPersona } from "./persona.ts";
 import { SentenceSplitter } from "./sentences.ts";
-import { synthesize, transcribe } from "./speech.ts";
+import { listSpeakers, synthesize, transcribe, unloadStt } from "./speech.ts";
 
 interface Session {
   id: string;
   createdAt: string;
-  messages: ChatMessage[];
+  startedAtMs: number;
+  messages: TurnEntry[];
 }
 
 const sessions = new Map<string, Session>();
+
+function isValidId(id: string): boolean {
+  return /^[a-z0-9-]+$/i.test(id);
+}
 
 function sendSse(res: express.Response, event: string, data: unknown): void {
   res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
@@ -23,7 +30,6 @@ function sendSse(res: express.Response, event: string, data: unknown): void {
 async function saveSession(session: Session): Promise<void> {
   const dir = join(config.privateDataDir, "sessions");
   await mkdir(dir, { recursive: true });
-  // 不儲存 system prompt 以外的敏感環境資訊，僅存對話紀錄
   await writeFile(join(dir, `${session.id}.json`), JSON.stringify(session, null, 2), "utf8");
 }
 
@@ -49,8 +55,14 @@ app.get("/api/health", async (_req, res) => {
     ok: ollama && stt && voicevox,
     services: { ollama, stt, voicevox },
     model: config.modelLive,
+    modelReview: config.modelReview,
     speaker: config.voicevoxSpeaker,
   });
+});
+
+app.get("/api/speakers", async (_req, res) => {
+  const speakers = await listSpeakers();
+  res.json({ defaultSpeaker: config.voicevoxSpeaker, speakers });
 });
 
 app.post("/api/session/start", async (_req, res) => {
@@ -59,13 +71,14 @@ app.post("/api/session/start", async (_req, res) => {
   const session: Session = {
     id,
     createdAt: new Date().toISOString(),
+    startedAtMs: Date.now(),
     messages: [{ role: "system", content: buildSystemPrompt(persona) }],
   };
   sessions.set(id, session);
   res.json({ sessionId: id, role: persona.target_role ?? "Tech Lead / PM" });
 });
 
-// 同時接收音訊 (multipart/form-data) 或文字/開場指令 (application/json)
+// 同時接收音訊 (audio/*) 或文字/開場指令 (application/json)
 app.post(
   "/api/session/:id/turn",
   express.raw({ type: () => true, limit: "25mb" }),
@@ -84,6 +97,19 @@ app.post(
     res.on("close", () => {
       if (!res.writableEnded) ac.abort();
     });
+
+    const speakerHeader = Number(req.headers["x-voicevox-speaker"]);
+    const speedHeader = Number(req.headers["x-voicevox-speed"]);
+    const offsetHeader = Number(req.headers["x-offset-sec"]);
+    const speaker = Number.isFinite(speakerHeader) && speakerHeader > 0
+      ? speakerHeader
+      : config.voicevoxSpeaker;
+    const speed = Number.isFinite(speedHeader) && speedHeader >= 0.5 && speedHeader <= 2.0
+      ? speedHeader
+      : config.voicevoxSpeed;
+    const userOffsetSec = Number.isFinite(offsetHeader) && offsetHeader >= 0
+      ? Math.round(offsetHeader * 10) / 10
+      : Math.round((Date.now() - session.startedAtMs) / 100) / 10;
 
     try {
       let userText = "";
@@ -108,20 +134,20 @@ app.post(
         }
       }
 
-      sendSse(res, "transcript", { role: "user", text: userText });
-      session.messages.push({ role: "user", content: userText });
+      sendSse(res, "transcript", { role: "user", text: userText, offsetSec: userOffsetSec });
+      session.messages.push({ role: "user", content: userText, offsetSec: userOffsetSec });
 
       sendSse(res, "status", { step: "llm" });
+      const assistantOffsetSec = Math.round((Date.now() - session.startedAtMs) / 100) / 10;
       const splitter = new SentenceSplitter();
       let fullReply = "";
-      // 序列化 TTS 合成，確保播放順序與句子順序一致
       let ttsChain = Promise.resolve();
 
       const enqueueSentence = (sentence: string) => {
         ttsChain = ttsChain.then(async () => {
           if (ac.signal.aborted) return;
-          sendSse(res, "sentence", { text: sentence });
-          const wav = await synthesize(sentence);
+          sendSse(res, "sentence", { text: sentence, offsetSec: assistantOffsetSec });
+          const wav = await synthesize(sentence, speaker, speed);
           if (ac.signal.aborted) return;
           sendSse(res, "audio", { wavBase64: wav.toString("base64") });
         });
@@ -134,9 +160,13 @@ app.post(
       for (const s of splitter.flush()) enqueueSentence(s);
 
       await ttsChain;
-      session.messages.push({ role: "assistant", content: fullReply.trim() });
+      session.messages.push({
+        role: "assistant",
+        content: fullReply.trim(),
+        offsetSec: assistantOffsetSec,
+      });
       await saveSession(session);
-      sendSse(res, "done", { fullText: fullReply.trim() });
+      sendSse(res, "done", { fullText: fullReply.trim(), offsetSec: assistantOffsetSec });
     } catch (err) {
       if (!ac.signal.aborted) {
         const msg = err instanceof Error ? err.message : String(err);
@@ -147,6 +177,61 @@ app.post(
     }
   },
 );
+
+// P2：上傳整場錄影（webm）
+app.post(
+  "/api/session/:id/recording",
+  express.raw({ type: () => true, limit: "500mb" }),
+  async (req, res) => {
+    const id = req.params.id;
+    if (!isValidId(id)) {
+      res.status(400).json({ error: "無效的場次 ID" });
+      return;
+    }
+    const dir = join(config.privateDataDir, "recordings");
+    await mkdir(dir, { recursive: true });
+    const file = join(dir, `${id}.webm`);
+    await writeFile(file, Buffer.from(req.body));
+    res.json({ ok: true, bytes: Buffer.byteLength(req.body) });
+  },
+);
+
+// P2：播放錄影（Express sendFile 內建 Range 支援時間軸跳轉）
+app.get("/api/session/:id/recording", (req, res) => {
+  const id = req.params.id;
+  if (!isValidId(id)) {
+    res.status(400).end();
+    return;
+  }
+  const file = resolve(config.privateDataDir, "recordings", `${id}.webm`);
+  if (!existsSync(file)) {
+    res.status(404).json({ error: "尚未有錄影檔" });
+    return;
+  }
+  res.sendFile(file);
+});
+
+// P3：結束面試 → 釋放 8GB VRAM（卸載即時模型與 STT）→ gemma4:12b 產出報告
+app.post("/api/session/:id/review", async (req, res) => {
+  const id = req.params.id;
+  const session = sessions.get(id);
+  if (!session) {
+    res.status(404).json({ error: "找不到面試場次" });
+    return;
+  }
+  try {
+    await Promise.all([unloadModel(config.modelLive), unloadStt()]);
+    const metrics = computeMetrics(session.messages);
+    const report = await generateReview(session.messages, metrics);
+    const dir = join(config.privateDataDir, "reports");
+    await mkdir(dir, { recursive: true });
+    await writeFile(join(dir, `${id}.md`), report, "utf8");
+    res.json({ ok: true, metrics, report });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    res.status(500).json({ error: msg });
+  }
+});
 
 app.listen(config.port, config.host, () => {
   console.log(`interview-dojo listening on http://${config.host}:${config.port}`);

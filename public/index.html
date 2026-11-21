@@ -8,31 +8,54 @@
 </head>
 <body>
   <header>
-    <div class="brand">interview-dojo <span class="badge">全本地運行</span></div>
-    <div id="health" class="health">檢查服務中…</div>
+    <div class="brand">
+      interview-dojo <span class="badge">全本地運行</span>
+      <span id="recBadge" class="rec-badge hidden">● REC <span id="timer">00:00</span></span>
+    </div>
+    <div class="toolbar">
+      <label class="voice-label">
+        面試官聲音
+        <select id="speakerSelect"></select>
+      </label>
+      <label class="voice-label">
+        語速 <span id="speedVal">1.05</span>x
+        <input id="speedRange" type="range" min="0.85" max="1.35" step="0.05" value="1.05" />
+      </label>
+      <div id="health" class="health">檢查服務中…</div>
+    </div>
   </header>
 
   <main>
     <section class="stage">
       <div class="video-box">
         <video id="cam" autoplay muted playsinline></video>
+        <video id="replay" class="hidden" controls playsinline></video>
         <div id="camOff" class="cam-off">尚未開啟鏡頭（點擊「開始面試」授權）</div>
       </div>
 
       <div class="interviewer-bar">
         <div class="avatar" id="avatar">官</div>
-        <div class="subtitle" id="subtitle">點擊「開始面試」，面試官會以日文開場。</div>
+        <div class="subtitle" id="subtitle">選擇面試官聲音後，點擊「開始面試」。</div>
       </div>
 
       <div class="controls">
         <button id="btnStart" class="btn primary">開始面試</button>
         <button id="btnTalk" class="btn talk" disabled>按住說話（或按住空白鍵）</button>
+        <button id="btnFinish" class="btn danger" disabled>結束面試並評分</button>
       </div>
       <div id="status" class="status">待命中</div>
+
+      <section id="reviewPanel" class="review-panel hidden">
+        <div class="review-header">
+          <h2>面試復盤報告（gemma4:12b）</h2>
+          <div id="metricsBar" class="metrics-bar"></div>
+        </div>
+        <pre id="reviewBody" class="review-body"></pre>
+      </section>
     </section>
 
     <aside class="transcript-panel">
-      <h2>對話紀錄</h2>
+      <h2>對話紀錄 <span class="hint">（結束後點擊時間可跳轉回放）</span></h2>
       <div id="log" class="log"></div>
       <form id="textForm" class="text-form">
         <input id="textInput" type="text" placeholder="備用：也可以直接輸入日文送出…" disabled />
@@ -41,8 +64,8 @@
     </aside>
   </main>
 
-  <footer>
-    音訊由 VOICEVOX 合成（使用預設角色時請標示：VOICEVOX:ずんだもん）｜所有資料僅存本機
+  <footer id="footerCredit">
+    音訊由 VOICEVOX 合成（VOICEVOX:青山龍星）｜所有錄影與評分僅存本機
   </footer>
 
   <script type="module" src="app.js"></script>

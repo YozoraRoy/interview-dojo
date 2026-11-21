@@ -56,7 +56,26 @@ def get_model() -> WhisperModel:
 
 @app.get("/health")
 def health():
-    return {"ok": True, "model": MODEL_NAME, "device": DEVICE, "compute": COMPUTE}
+    return {
+        "ok": True,
+        "loaded": _model is not None,
+        "model": MODEL_NAME,
+        "device": DEVICE,
+        "compute": COMPUTE,
+    }
+
+
+@app.post("/unload")
+def unload():
+    """卸載 STT 模型釋放 VRAM，讓事後評分的大模型（如 gemma4:12b）有足夠顯存。"""
+    global _model
+    if _model is not None:
+        del _model
+        _model = None
+        import gc
+
+        gc.collect()
+    return {"ok": True, "loaded": False}
 
 
 @app.post("/transcribe")
