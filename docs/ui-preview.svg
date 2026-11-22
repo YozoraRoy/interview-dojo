@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 680" width="1120" height="680" role="img" aria-label="interview-dojo local UI preview">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 680" width="1120" height="680" role="img" aria-label="interview-dojo ローカルUIプレビュー">
   <defs>
     <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#0f1218" />
@@ -24,23 +24,23 @@
 
   <!-- 品牌名稱與錄影徽章 -->
   <text x="24" y="37" fill="#e6e9ef" font-family="system-ui, sans-serif" font-size="16" font-weight="700">interview-dojo</text>
-  <rect x="148" y="21" width="76" height="22" rx="11" fill="#1e293b" />
-  <text x="186" y="36" text-anchor="middle" fill="#93c5fd" font-family="system-ui, sans-serif" font-size="11" font-weight="600">100% Local</text>
-  <rect x="234" y="21" width="118" height="22" rx="11" fill="#451a1f" />
-  <text x="293" y="36" text-anchor="middle" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="11" font-weight="600">● REC 02:14 | 3/12</text>
+  <rect x="148" y="21" width="94" height="22" rx="11" fill="#1e293b" />
+  <text x="195" y="36" text-anchor="middle" fill="#93c5fd" font-family="system-ui, sans-serif" font-size="11" font-weight="600">完全ローカル</text>
+  <rect x="250" y="21" width="124" height="22" rx="11" fill="#451a1f" />
+  <text x="312" y="36" text-anchor="middle" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="11" font-weight="600">● REC 02:14 | 3/12回</text>
 
   <!-- 右上角方案切換與狀態 -->
-  <rect x="466" y="18" width="186" height="28" rx="7" fill="#111318" stroke="#2a303c" />
-  <rect x="468" y="20" width="58" height="24" rx="5" fill="#3b82f6" />
-  <text x="497" y="36" text-anchor="middle" fill="#ffffff" font-family="system-ui, sans-serif" font-size="11" font-weight="600">1: SVG</text>
-  <text x="556" y="36" text-anchor="middle" fill="#9aa4b2" font-family="system-ui, sans-serif" font-size="11" font-weight="600">2: 3D</text>
-  <text x="619" y="36" text-anchor="middle" fill="#9aa4b2" font-family="system-ui, sans-serif" font-size="11" font-weight="600">3: Rive</text>
+  <rect x="456" y="18" width="194" height="28" rx="7" fill="#111318" stroke="#2a303c" />
+  <rect x="458" y="20" width="62" height="24" rx="5" fill="#3b82f6" />
+  <text x="489" y="36" text-anchor="middle" fill="#ffffff" font-family="system-ui, sans-serif" font-size="11" font-weight="600">方式1 SVG</text>
+  <text x="553" y="36" text-anchor="middle" fill="#9aa4b2" font-family="system-ui, sans-serif" font-size="11" font-weight="600">方式2 3D</text>
+  <text x="617" y="36" text-anchor="middle" fill="#9aa4b2" font-family="system-ui, sans-serif" font-size="11" font-weight="600">方式3 Rive</text>
 
-  <rect x="662" y="18" width="136" height="28" rx="6" fill="#111318" stroke="#2a303c" />
-  <text x="674" y="36" fill="#e6e9ef" font-family="system-ui, sans-serif" font-size="11">柴犬部長（西裝） ▾</text>
+  <rect x="660" y="18" width="140" height="28" rx="6" fill="#111318" stroke="#2a303c" />
+  <text x="672" y="36" fill="#e6e9ef" font-family="system-ui, sans-serif" font-size="11">柴犬部長（スーツ） ▾</text>
 
-  <rect x="808" y="18" width="112" height="28" rx="6" fill="#111318" stroke="#2a303c" />
-  <text x="820" y="36" fill="#e6e9ef" font-family="system-ui, sans-serif" font-size="11">青山龍星 1.05x ▾</text>
+  <rect x="810" y="18" width="112" height="28" rx="6" fill="#111318" stroke="#2a303c" />
+  <text x="822" y="36" fill="#e6e9ef" font-family="system-ui, sans-serif" font-size="11">青山龍星 1.05x ▾</text>
 
   <text x="1096" y="36" text-anchor="end" fill="#22c55e" font-family="system-ui, sans-serif" font-size="11" font-weight="600">Ollama:OK | STT:OK | VV:OK</text>
 
@@ -51,7 +51,7 @@
   <rect x="36" y="88" width="166" height="24" rx="12" fill="#0f172a" opacity="0.88" stroke="#334155" />
   <circle cx="49" cy="100" r="4" fill="#22c55e" />
   <text x="59" y="104" fill="#e2e8f0" font-family="system-ui, sans-serif" font-size="11">面接官・柴犬</text>
-  <text x="148" y="104" fill="#86efac" font-family="system-ui, sans-serif" font-size="11" font-weight="600">Speaking</text>
+  <text x="148" y="104" fill="#86efac" font-family="system-ui, sans-serif" font-size="11" font-weight="600">発話中</text>
 
   <!-- 柴犬穿西裝向量插畫 -->
   <g transform="translate(86, 108)">
@@ -94,8 +94,8 @@
 
   <!-- 並排視訊框 2：應試者鏡頭 -->
   <rect x="376" y="76" width="340" height="214" rx="10" fill="url(#camStage)" stroke="#2a303c" stroke-width="1.5" />
-  <rect x="388" y="88" width="96" height="24" rx="12" fill="#0f172a" opacity="0.88" stroke="#334155" />
-  <text x="436" y="104" text-anchor="middle" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="11">Your Camera</text>
+  <rect x="388" y="88" width="108" height="24" rx="12" fill="#0f172a" opacity="0.88" stroke="#334155" />
+  <text x="442" y="104" text-anchor="middle" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="11">応募者カメラ</text>
   <!-- 應試者剪影 -->
   <g transform="translate(476, 118)" opacity="0.75">
     <circle cx="70" cy="48" r="30" fill="#334155" />
@@ -108,52 +108,55 @@
   <text x="52" y="340" text-anchor="middle" fill="#e6e9ef" font-family="system-ui, sans-serif" font-size="13" font-weight="700">官</text>
   <text x="82" y="330" fill="#e6e9ef" font-family="system-ui, sans-serif" font-size="13">マイクロサービス分割の際、どのような基準で</text>
   <text x="82" y="350" fill="#e6e9ef" font-family="system-ui, sans-serif" font-size="13">境界を設計されましたか？</text>
-  <rect x="630" y="319" width="74" height="32" rx="7" fill="#111318" stroke="#3b82f6" />
-  <text x="667" y="339" text-anchor="middle" fill="#e6e9ef" font-family="system-ui, sans-serif" font-size="12" font-weight="600">🔊 Replay</text>
+  <rect x="616" y="319" width="88" height="32" rx="7" fill="#111318" stroke="#3b82f6" />
+  <text x="660" y="339" text-anchor="middle" fill="#e6e9ef" font-family="system-ui, sans-serif" font-size="12" font-weight="600">🔊 もう一度</text>
 
   <!-- 即時思考進度條 -->
   <rect x="24" y="378" width="692" height="44" rx="8" fill="#192130" stroke="#2a303c" />
-  <rect x="36" y="388" width="84" height="24" rx="12" fill="#143326" stroke="#22c55e" />
-  <text x="78" y="404" text-anchor="middle" fill="#86efac" font-family="system-ui, sans-serif" font-size="11" font-weight="600">① STT ✓</text>
-  <text x="130" y="404" fill="#9aa4b2" font-family="system-ui, sans-serif" font-size="13">›</text>
-  <rect x="142" y="388" width="114" height="24" rx="12" fill="#172c4e" stroke="#3b82f6" />
-  <text x="199" y="404" text-anchor="middle" fill="#93c5fd" font-family="system-ui, sans-serif" font-size="11" font-weight="600">② AI Thinking</text>
+  <rect x="36" y="388" width="96" height="24" rx="12" fill="#143326" stroke="#22c55e" />
+  <text x="84" y="404" text-anchor="middle" fill="#86efac" font-family="system-ui, sans-serif" font-size="11" font-weight="600">① 音声認識 ✓</text>
+  <text x="140" y="404" fill="#9aa4b2" font-family="system-ui, sans-serif" font-size="13">›</text>
+  <rect x="152" y="388" width="106" height="24" rx="12" fill="#172c4e" stroke="#3b82f6" />
+  <text x="205" y="404" text-anchor="middle" fill="#93c5fd" font-family="system-ui, sans-serif" font-size="11" font-weight="600">② AI 思考中</text>
   <text x="266" y="404" fill="#9aa4b2" font-family="system-ui, sans-serif" font-size="13">›</text>
-  <rect x="278" y="388" width="84" height="24" rx="12" fill="#111318" stroke="#2a303c" />
-  <text x="320" y="404" text-anchor="middle" fill="#9aa4b2" font-family="system-ui, sans-serif" font-size="11">③ TTS</text>
+  <rect x="278" y="388" width="94" height="24" rx="12" fill="#111318" stroke="#2a303c" />
+  <text x="325" y="404" text-anchor="middle" fill="#9aa4b2" font-family="system-ui, sans-serif" font-size="11">③ 音声合成</text>
 
-  <text x="638" y="404" text-anchor="end" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="11">Generating (48 chars)…</text>
+  <text x="638" y="404" text-anchor="end" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="11">応答生成中（48文字）…</text>
   <rect x="650" y="389" width="54" height="22" rx="6" fill="#111318" stroke="#2a303c" />
   <text x="677" y="404" text-anchor="middle" fill="#fcd34d" font-family="system-ui, sans-serif" font-size="11" font-weight="600">1.8s</text>
 
-  <!-- 控制按鈕列 -->
-  <rect x="24" y="436" width="128" height="42" rx="8" fill="#3b82f6" />
-  <text x="88" y="462" text-anchor="middle" fill="#ffffff" font-family="system-ui, sans-serif" font-size="13" font-weight="600">Restart</text>
+  <!-- 控制按鈕列（含獨立「面接終了」與「終了して評価」） -->
+  <rect x="24" y="436" width="104" height="42" rx="8" fill="#3b82f6" />
+  <text x="76" y="462" text-anchor="middle" fill="#ffffff" font-family="system-ui, sans-serif" font-size="13" font-weight="600">やり直す</text>
 
-  <rect x="164" y="436" width="388" height="42" rx="8" fill="#191d24" stroke="#334155" />
-  <text x="358" y="462" text-anchor="middle" fill="#e6e9ef" font-family="system-ui, sans-serif" font-size="13" font-weight="600">Hold to Speak (or Hold Spacebar)</text>
+  <rect x="138" y="436" width="320" height="42" rx="8" fill="#191d24" stroke="#334155" />
+  <text x="298" y="462" text-anchor="middle" fill="#e6e9ef" font-family="system-ui, sans-serif" font-size="13" font-weight="600">長押しで話す（または Space キー）</text>
 
-  <rect x="564" y="436" width="152" height="42" rx="8" fill="#7f1d1d" stroke="#991b1b" />
-  <text x="640" y="462" text-anchor="middle" fill="#ffffff" font-family="system-ui, sans-serif" font-size="13" font-weight="600">Finish &amp; Review</text>
+  <rect x="468" y="436" width="104" height="42" rx="8" fill="#191d24" stroke="#475569" />
+  <text x="520" y="462" text-anchor="middle" fill="#e6e9ef" font-family="system-ui, sans-serif" font-size="13" font-weight="600">面接終了</text>
+
+  <rect x="582" y="436" width="134" height="42" rx="8" fill="#7f1d1d" stroke="#991b1b" />
+  <text x="649" y="462" text-anchor="middle" fill="#ffffff" font-family="system-ui, sans-serif" font-size="13" font-weight="600">終了して評価</text>
 
   <!-- 復盤報告預覽卡片 -->
   <rect x="24" y="492" width="692" height="156" rx="10" fill="#191d24" stroke="#2a303c" />
-  <text x="40" y="518" fill="#e6e9ef" font-family="system-ui, sans-serif" font-size="13" font-weight="700">Post-Interview Review (gemma4:12b)</text>
-  <rect x="444" y="502" width="84" height="22" rx="6" fill="#111318" stroke="#2a303c" />
-  <text x="486" y="517" text-anchor="middle" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="10">Turns: 6</text>
-  <rect x="536" y="502" width="76" height="22" rx="6" fill="#111318" stroke="#2a303c" />
-  <text x="574" y="517" text-anchor="middle" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="10">Fillers: 4</text>
-  <rect x="620" y="502" width="84" height="22" rx="6" fill="#3b82f6" />
-  <text x="662" y="517" text-anchor="middle" fill="#ffffff" font-family="system-ui, sans-serif" font-size="10" font-weight="600">Export HTML</text>
+  <text x="40" y="518" fill="#e6e9ef" font-family="system-ui, sans-serif" font-size="13" font-weight="700">面接振り返りレポート（gemma4:12b）</text>
+  <rect x="424" y="502" width="84" height="22" rx="6" fill="#111318" stroke="#2a303c" />
+  <text x="466" y="517" text-anchor="middle" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="10">回答数: 6回</text>
+  <rect x="516" y="502" width="90" height="22" rx="6" fill="#111318" stroke="#2a303c" />
+  <text x="561" y="517" text-anchor="middle" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="10">フィラー: 4回</text>
+  <rect x="614" y="502" width="90" height="22" rx="6" fill="#3b82f6" />
+  <text x="659" y="517" text-anchor="middle" fill="#ffffff" font-family="system-ui, sans-serif" font-size="10" font-weight="600">HTML 出力</text>
 
   <text x="40" y="548" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="12">• 結論ファースト: 4.0 / 5 — 結論を先に述べてから背景を補足できています。</text>
   <text x="40" y="570" fill="#cbd5e1" font-family="system-ui, sans-serif" font-size="12">• 技術選定のトレードオフ: 4.2 / 5 — レイテンシと整合性の比較が明確です。</text>
   <text x="40" y="592" fill="#93c5fd" font-family="system-ui, sans-serif" font-size="12">• 音読練習リライト: 「まず結論から申し上げますと、ドメイン境界を基準に…」</text>
-  <text x="40" y="614" fill="#9aa4b2" font-family="system-ui, sans-serif" font-size="11">All recordings, transcripts, and reviews remain 100% offline on 127.0.0.1.</text>
+  <text x="40" y="614" fill="#9aa4b2" font-family="system-ui, sans-serif" font-size="11">※ 録画・文字起こし・評価レポートはすべて 127.0.0.1 のローカル環境のみに保存されます。</text>
 
   <!-- 右側對話紀錄面板 -->
   <rect x="734" y="76" width="362" height="572" rx="10" fill="#191d24" stroke="#2a303c" />
-  <text x="752" y="102" fill="#9aa4b2" font-family="system-ui, sans-serif" font-size="13" font-weight="700">Transcript (Click timestamp to seek)</text>
+  <text x="752" y="102" fill="#9aa4b2" font-family="system-ui, sans-serif" font-size="13" font-weight="700">会話ログ（時刻クリックで録画を再生）</text>
 
   <!-- 訊息 1（面試官） -->
   <rect x="752" y="118" width="318" height="66" rx="8" fill="#14171d" stroke="#2a303c" />
@@ -179,7 +182,7 @@
 
   <!-- 備用文字輸入框 -->
   <rect x="752" y="596" width="256" height="34" rx="6" fill="#111318" stroke="#2a303c" />
-  <text x="764" y="617" fill="#64748b" font-family="system-ui, sans-serif" font-size="11">Optional: type Japanese text…</text>
+  <text x="764" y="617" fill="#64748b" font-family="system-ui, sans-serif" font-size="11">予備：日本語テキストを直接入力…</text>
   <rect x="1016" y="596" width="62" height="34" rx="6" fill="#252b36" stroke="#2a303c" />
-  <text x="1047" y="617" text-anchor="middle" fill="#e6e9ef" font-family="system-ui, sans-serif" font-size="12">Send</text>
+  <text x="1047" y="617" text-anchor="middle" fill="#e6e9ef" font-family="system-ui, sans-serif" font-size="12">送信</text>
 </svg>
