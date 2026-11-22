@@ -6,6 +6,8 @@ A **100% local, zero-API-cost ($0)** AI video mock-interview practice studio des
 
 Everything runs on `127.0.0.1` — your camera recording, microphone audio, resume (`persona.yaml`), transcripts, and evaluation reports **never leave your machine**.
 
+![interview-dojo UI Preview](docs/ui-preview.svg)
+
 ---
 
 ## Key Features
