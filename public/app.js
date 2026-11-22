@@ -118,6 +118,7 @@ const thinkStepEls = {
 };
 const btnStart = $("btnStart");
 const btnTalk = $("btnTalk");
+const btnEndOnly = $("btnEndOnly");
 const btnFinish = $("btnFinish");
 const statusEl = $("status");
 const logEl = $("log");
@@ -139,6 +140,7 @@ let turnChunks = [];
 let fullRecorder = null;
 let fullChunks = [];
 let busy = false;
+let sessionEnded = false;
 let speakersList = [];
 
 const audioQueue = [];
@@ -422,8 +424,10 @@ async function sendTurn(body, contentType) {
     }
   } finally {
     busy = false;
-    btnTalk.disabled = false;
-    btnSend.disabled = false;
+    if (!sessionEnded) {
+      btnTalk.disabled = false;
+      btnSend.disabled = false;
+    }
   }
 }
 
@@ -497,8 +501,11 @@ btnStart.addEventListener("click", async () => {
   const data = await res.json();
   sessionId = data.sessionId;
   sessionStartMs = Date.now();
+  sessionEnded = false;
   logEl.innerHTML = "";
   textInput.disabled = false;
+  btnEndOnly.disabled = false;
+  btnFinish.textContent = "結束面試並評分";
   btnFinish.disabled = false;
 
   startFullRecording();
@@ -507,12 +514,15 @@ btnStart.addEventListener("click", async () => {
   btnStart.disabled = false;
 });
 
-btnFinish.addEventListener("click", async () => {
-  if (!sessionId || busy) return;
-  btnFinish.disabled = true;
+async function finalizeInterviewSession() {
+  if (sessionEnded) return;
+  sessionEnded = true;
+  stopAudioPlayback();
+  btnEndOnly.disabled = true;
   btnTalk.disabled = true;
   btnSend.disabled = true;
-  btnStart.disabled = true;
+  textInput.disabled = true;
+  interviewerAvatar.setState("idle");
 
   statusEl.textContent = "儲存整場錄影中…";
   const videoBlob = await stopFullRecording();
@@ -526,6 +536,31 @@ btnFinish.addEventListener("click", async () => {
     replayEl.src = `/api/session/${sessionId}/recording`;
     replayEl.classList.remove("hidden");
   }
+}
+
+btnEndOnly.addEventListener("click", async () => {
+  if (!sessionId || busy || sessionEnded) return;
+  btnStart.disabled = true;
+  btnFinish.disabled = true;
+  try {
+    await finalizeInterviewSession();
+    btnFinish.textContent = "產生評分報告";
+    btnFinish.disabled = false;
+    statusEl.textContent = "面試已結束（已儲存錄影，可點擊右側時間跳轉回放，或按「產生評分報告」）。";
+  } finally {
+    btnStart.disabled = false;
+  }
+});
+
+btnFinish.addEventListener("click", async () => {
+  if (!sessionId || busy) return;
+  btnFinish.disabled = true;
+  btnEndOnly.disabled = true;
+  btnTalk.disabled = true;
+  btnSend.disabled = true;
+  btnStart.disabled = true;
+
+  await finalizeInterviewSession();
 
   statusEl.textContent = "正在切換至 gemma4:12b 產出評分報告（約 10–25 秒）…";
   try {
@@ -543,8 +578,10 @@ btnFinish.addEventListener("click", async () => {
       .join("");
     reviewBody.textContent = data.report;
     reviewPanel.classList.remove("hidden");
+    btnFinish.textContent = "結束面試並評分";
     statusEl.textContent = "復盤完成！可點擊右側逐字稿時間跳轉回放。";
   } catch (err) {
+    btnFinish.disabled = false;
     statusEl.textContent = `評分失敗：${err.message}`;
   } finally {
     btnStart.disabled = false;
