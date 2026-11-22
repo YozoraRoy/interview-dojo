@@ -5,6 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>interview-dojo — 本地日文模擬面試</title>
   <link rel="stylesheet" href="style.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "/vendor/three/build/three.module.js",
+        "three/addons/": "/vendor/three/examples/jsm/",
+        "@pixiv/three-vrm": "/vendor/three-vrm/lib/three-vrm.module.js"
+      }
+    }
+  </script>
 </head>
 <body>
   <header>
@@ -13,6 +22,18 @@
       <span id="recBadge" class="rec-badge hidden">● REC <span id="timer">00:00</span> ｜ <span id="turnBadge">0/12 輪</span></span>
     </div>
     <div class="toolbar">
+      <div class="avatar-controls" title="切換虛擬面試官渲染方案與人物（會自動記憶）">
+        <div class="seg-group" role="group" aria-label="渲染方案">
+          <button id="btnModeSvg" type="button" class="seg-btn active">方案一 SVG</button>
+          <button id="btnMode3d" type="button" class="seg-btn">方案二 3D</button>
+          <button id="btnModeRive" type="button" class="seg-btn">方案三 Rive</button>
+        </div>
+        <select id="characterSelect" aria-label="選擇面試官人物"></select>
+        <button id="btnLoadRive" type="button" class="btn small hidden">載入 .riv</button>
+        <input id="riveFileInput" type="file" accept=".riv" class="hidden" />
+        <button id="btnLoadVrm" type="button" class="btn small hidden">載入 .vrm</button>
+        <input id="vrmFileInput" type="file" accept=".vrm" class="hidden" />
+      </div>
       <label class="voice-label">
         面試官聲音
         <select id="speakerSelect"></select>
@@ -27,15 +48,33 @@
 
   <main>
     <section class="stage">
-      <div class="video-box">
-        <video id="cam" autoplay muted playsinline></video>
-        <video id="replay" class="hidden" controls playsinline></video>
-        <div id="camOff" class="cam-off">尚未開啟鏡頭（點擊「開始面試」授權）</div>
+      <div class="stage-videos">
+        <div id="interviewerStage" class="interviewer-stage"></div>
+        <div class="video-box">
+          <video id="cam" autoplay muted playsinline></video>
+          <video id="replay" class="hidden" controls playsinline></video>
+          <div id="camOff" class="cam-off">尚未開啟鏡頭（點擊「開始面試」授權）</div>
+        </div>
       </div>
 
       <div class="interviewer-bar">
         <div class="avatar" id="avatar">官</div>
         <div class="subtitle" id="subtitle">選擇面試官聲音後，點擊「開始面試」。</div>
+        <button id="btnReplayLast" type="button" class="btn small replay-btn" disabled title="重播面試官剛才說的話">🔊 重播</button>
+      </div>
+
+      <div id="thinkProgress" class="think-progress hidden" aria-live="polite">
+        <div class="think-steps">
+          <span class="think-step" data-step="stt">① 辨識語音</span>
+          <span class="think-arrow">›</span>
+          <span class="think-step" data-step="llm">② AI 思考生成</span>
+          <span class="think-arrow">›</span>
+          <span class="think-step" data-step="tts">③ 合成語音</span>
+        </div>
+        <div class="think-meta">
+          <span id="thinkDetail">準備中…</span>
+          <span id="thinkElapsed" class="think-elapsed">0.0s</span>
+        </div>
       </div>
 
       <div class="controls">
@@ -72,6 +111,7 @@
     音訊由 VOICEVOX 合成（VOICEVOX:青山龍星）｜所有錄影與評分僅存本機
   </footer>
 
+  <script src="vendor/rive.js"></script>
   <script type="module" src="app.js"></script>
 </body>
 </html>

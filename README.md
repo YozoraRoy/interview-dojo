@@ -11,6 +11,12 @@ Everything runs on `127.0.0.1` — your camera recording, microphone audio, resu
 ## Key Features
 
 - **Push-to-Talk Voice Loop (Low Latency):** Hold button / `Space` to speak → `faster-whisper` (`large-v3-turbo`, CUDA) transcribes Japanese/English mixed tech terms → Ollama (`gemma4:e4b`) streams follow-up questions → `VOICEVOX` synthesizes sentence-by-sentence WAV audio.
+- **Local Virtual Interviewer Avatars (3 Switchable Engines + Persistent Memory):**
+  - **Mode 1 (SVG):** Lightweight 2D characters (*Suit Shiba Inu*, *Chibi Interviewer*) with Web Audio API lip-sync and auto-blinking.
+  - **Mode 2 (3D / VRM):** Three.js + `@pixiv/three-vrm` with built-in 3D characters (*Business-Shirt Interviewer*, *Suit Shiba Inu*) and custom `.vrm` upload, driven by a finite-state machine (`idle / listening / thinking / speaking`).
+  - **Mode 3 (Rive):** `@rive-app/canvas` state-machine characters (`avatar-pack.riv`, `teddy.riv`, or custom `.riv` files) served 100% locally.
+  - Preferences (engine & character) are automatically saved in `localStorage`.
+- **Live Thinking Progress & Audio Replay:** Real-time 3-stage pipeline indicator (`STT → AI Generation (live char count) → TTS`) with elapsed timer, plus one-click `🔊` replay buttons on both the subtitle bar and transcript log.
 - **Selectable Interviewer Voices & Speed:** Switch between mature male voices (e.g. 青山龍星, 玄野武宏), professional female voices (e.g. No.7, 九州そら), or casual styles, with adjustable playback speed (`0.85x–1.35x`).
 - **Full-Session Video Recording & Timeline Playback:** Records your camera & microphone (`webm`) locally. After finishing, click any timestamp (`[00:12]`) in the transcript to jump directly to that moment in the video.
 - **Post-Interview Review & Spoken Japanese Coaching (`gemma4:12b`):**

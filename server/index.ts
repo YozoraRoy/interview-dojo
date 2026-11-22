@@ -45,6 +45,8 @@ async function checkService(url: string): Promise<boolean> {
 
 const app = express();
 app.use(express.static("public"));
+app.use("/vendor/three", express.static("node_modules/three"));
+app.use("/vendor/three-vrm", express.static("node_modules/@pixiv/three-vrm"));
 
 app.get("/api/health", async (_req, res) => {
   const [ollama, stt, voicevox] = await Promise.all([
@@ -138,15 +140,20 @@ app.post(
       sendSse(res, "transcript", { role: "user", text: userText, offsetSec: userOffsetSec });
       session.messages.push({ role: "user", content: userText, offsetSec: userOffsetSec });
 
-      sendSse(res, "status", { step: "llm" });
+      sendSse(res, "status", { step: "llm_wait" });
       const assistantOffsetSec = Math.round((Date.now() - session.startedAtMs) / 100) / 10;
       const splitter = new SentenceSplitter();
       let fullReply = "";
+      let sentenceCount = 0;
+      let lastProgressAt = 0;
       let ttsChain = Promise.resolve();
 
       const enqueueSentence = (sentence: string) => {
+        sentenceCount += 1;
+        const idx = sentenceCount;
         ttsChain = ttsChain.then(async () => {
           if (ac.signal.aborted) return;
+          sendSse(res, "status", { step: "tts", index: idx });
           sendSse(res, "sentence", { text: sentence, offsetSec: assistantOffsetSec });
           const wav = await synthesize(sentence, speaker, speed);
           if (ac.signal.aborted) return;
@@ -156,6 +163,15 @@ app.post(
 
       for await (const chunk of streamChat(session.messages, ac.signal)) {
         fullReply += chunk;
+        const now = Date.now();
+        if (now - lastProgressAt >= 180) {
+          lastProgressAt = now;
+          sendSse(res, "progress", {
+            step: "llm_gen",
+            chars: fullReply.trim().length,
+            sentences: sentenceCount,
+          });
+        }
         for (const s of splitter.push(chunk)) enqueueSentence(s);
       }
       for (const s of splitter.flush()) enqueueSentence(s);

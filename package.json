@@ -5,13 +5,18 @@
   "type": "module",
   "description": "全本地 AI 日文模擬面試（Ollama + faster-whisper + VOICEVOX）",
   "license": "MIT",
-  "engines": { "node": ">=24" },
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "start": "node --env-file-if-exists=.env server/index.ts",
     "test": "node --test server/"
   },
   "dependencies": {
+    "@pixiv/three-vrm": "^3.5.5",
+    "@rive-app/canvas": "^2.54.0",
     "express": "^5.1.0",
+    "three": "^0.187.0",
     "yaml": "^2.8.0"
   }
 }
