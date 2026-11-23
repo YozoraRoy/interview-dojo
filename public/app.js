@@ -4,6 +4,7 @@ import {
   SVG_CHARACTERS,
   THREE_D_CHARACTERS,
 } from "./avatar.js";
+import { applyI18nToDom, getLang, setLang, t } from "./i18n.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -17,6 +18,7 @@ const btnLoadRive = $("btnLoadRive");
 const riveFileInput = $("riveFileInput");
 const btnLoadVrm = $("btnLoadVrm");
 const vrmFileInput = $("vrmFileInput");
+const langSelect = $("langSelect");
 
 function syncAvatarToolbar() {
   const prefs = interviewerAvatar.getPreferences();
@@ -40,11 +42,11 @@ function syncAvatarToolbar() {
     const opt = document.createElement("option");
     opt.value = item.id;
     if (item.id === "custom" && prefs.customRiveName) {
-      opt.textContent = `自訂：${prefs.customRiveName}`;
+      opt.textContent = t("charCustomPrefix", { name: prefs.customRiveName });
     } else if (item.id === "custom_vrm" && prefs.customVrmName) {
-      opt.textContent = `自訂：${prefs.customVrmName}`;
+      opt.textContent = t("charCustomPrefix", { name: prefs.customVrmName });
     } else {
-      opt.textContent = item.label;
+      opt.textContent = t(item.labelKey);
     }
     if (item.id === activeId) opt.selected = true;
     characterSelect.appendChild(opt);
@@ -142,6 +144,84 @@ let fullChunks = [];
 let busy = false;
 let sessionEnded = false;
 let speakersList = [];
+let lastTurnCount = 0;
+let lastMaxTurns = 12;
+let lastHealthData = null;
+let lastMetrics = null;
+let statusState = { key: "statusIdle", vars: {} };
+let thinkState = { key: "thinkReady", vars: {} };
+
+function setStatus(key, vars = {}) {
+  statusState = { key, vars };
+  statusEl.textContent = t(key, vars);
+}
+
+function setThinkDetail(key, vars = {}) {
+  thinkState = { key, vars };
+  thinkDetailEl.textContent = t(key, vars);
+}
+
+function renderTurnBadge() {
+  turnBadge.textContent = t("turnBadge", { turns: lastTurnCount, max: lastMaxTurns });
+}
+
+function renderHealth() {
+  if (!lastHealthData) return;
+  if (lastHealthData.error) {
+    healthEl.textContent = t("healthOffline");
+    healthEl.className = "health err";
+    return;
+  }
+  const h = lastHealthData;
+  const parts = [
+    `Ollama:${h.services.ollama ? t("healthOnline") : t("healthDown")}`,
+    `STT:${h.services.stt ? t("healthOnline") : t("healthDown")}`,
+    `VOICEVOX:${h.services.voicevox ? t("healthOnline") : t("healthDown")}`,
+  ];
+  healthEl.textContent = `${parts.join(" ｜ ")} (${h.model})`;
+  healthEl.className = `health ${h.ok ? "ok" : "err"}`;
+}
+
+function renderMetricsBar() {
+  if (!lastMetrics) return;
+  const m = lastMetrics;
+  metricsBar.innerHTML = [
+    t("metricTurns", { n: m.userTurns }),
+    t("metricChars", { total: m.totalChars, avg: m.avgCharsPerTurn }),
+    t("metricFillers", { n: m.fillerTotal }),
+  ]
+    .map((txt) => `<span class="metric-chip">${txt}</span>`)
+    .join("");
+}
+
+function applyAllLocale() {
+  applyI18nToDom();
+  syncAvatarToolbar();
+  interviewerAvatar.refreshLocale();
+  updateCredit();
+  renderHealth();
+  renderTurnBadge();
+  renderMetricsBar();
+  setStatus(statusState.key, statusState.vars);
+  if (!thinkProgressEl.classList.contains("hidden")) {
+    setThinkDetail(thinkState.key, thinkState.vars);
+  }
+  if (sessionId) {
+    btnStart.textContent = t("btnRestart");
+  }
+  if (sessionEnded) {
+    btnFinish.textContent = t("btnGenerateReview");
+  }
+  if (turnRecorder?.state === "recording") {
+    btnTalk.textContent = t("btnTalkRecording");
+  }
+}
+
+langSelect.value = getLang();
+langSelect.addEventListener("change", () => {
+  setLang(langSelect.value);
+  applyAllLocale();
+});
 
 const audioQueue = [];
 let playing = false;
@@ -150,10 +230,10 @@ let lastTurnBlobs = [];
 let thinkStartMs = 0;
 let thinkTimerHandle = null;
 
-function startThinkProgress(initialStep, detailText) {
+function startThinkProgress(initialStep, detailKey, detailVars = {}) {
   thinkStartMs = performance.now();
   thinkProgressEl.classList.remove("hidden");
-  setThinkStep(initialStep, detailText);
+  setThinkStep(initialStep, detailKey, detailVars);
   clearInterval(thinkTimerHandle);
   thinkTimerHandle = setInterval(() => {
     const sec = (performance.now() - thinkStartMs) / 1000;
@@ -161,7 +241,7 @@ function startThinkProgress(initialStep, detailText) {
   }, 100);
 }
 
-function setThinkStep(step, detailText) {
+function setThinkStep(step, detailKey, detailVars = {}) {
   const order = ["stt", "llm", "tts"];
   const activeIdx = order.indexOf(step);
   order.forEach((key, idx) => {
@@ -170,10 +250,10 @@ function setThinkStep(step, detailText) {
     el.classList.toggle("done", activeIdx > idx);
     el.classList.toggle("active", activeIdx === idx);
   });
-  if (detailText) thinkDetailEl.textContent = detailText;
+  if (detailKey) setThinkDetail(detailKey, detailVars);
 }
 
-function finishThinkProgress(finalDetail) {
+function finishThinkProgress(detailKey, detailVars = {}) {
   clearInterval(thinkTimerHandle);
   thinkTimerHandle = null;
   Object.values(thinkStepEls).forEach((el) => {
@@ -181,7 +261,7 @@ function finishThinkProgress(finalDetail) {
     el.classList.remove("active");
     el.classList.add("done");
   });
-  if (finalDetail) thinkDetailEl.textContent = finalDetail;
+  if (detailKey) setThinkDetail(detailKey, detailVars);
   const sec = thinkStartMs ? (performance.now() - thinkStartMs) / 1000 : 0;
   thinkElapsedEl.textContent = `${sec.toFixed(1)}s`;
 }
@@ -264,7 +344,7 @@ function formatSec(sec) {
 function updateCredit() {
   const sp = speakersList.find((x) => String(x.id) === speakerSelect.value);
   const credit = sp ? sp.credit : "VOICEVOX:青山龍星";
-  footerCredit.textContent = `音訊由 VOICEVOX 合成（${credit}）｜所有錄影與評分僅存本機`;
+  footerCredit.textContent = t("footerCredit", { credit });
 }
 
 function appendLog(role, text, offsetSec, turnBlobs) {
@@ -274,7 +354,7 @@ function appendLog(role, text, offsetSec, turnBlobs) {
     const ts = document.createElement("span");
     ts.className = "msg-ts";
     ts.textContent = `[${formatSec(offsetSec)}]`;
-    ts.title = "面試結束後點擊可跳轉至該時間點";
+    ts.title = t("tsTitle");
     ts.addEventListener("click", () => {
       if (!replayEl.classList.contains("hidden")) {
         replayEl.currentTime = offsetSec;
@@ -292,7 +372,7 @@ function appendLog(role, text, offsetSec, turnBlobs) {
     btn.type = "button";
     btn.className = "msg-replay";
     btn.textContent = "🔊";
-    btn.title = "重播這段語音";
+    btn.title = t("btnMsgReplayTitle");
     btn.addEventListener("click", () => replayBlobs(turnBlobs));
     div.appendChild(btn);
   }
@@ -323,17 +403,11 @@ async function loadSpeakers() {
 async function checkHealth() {
   try {
     const res = await fetch("/api/health");
-    const h = await res.json();
-    const parts = [
-      `Ollama:${h.services.ollama ? "OK" : "離線"}`,
-      `STT:${h.services.stt ? "OK" : "離線"}`,
-      `VOICEVOX:${h.services.voicevox ? "OK" : "離線"}`,
-    ];
-    healthEl.textContent = `${parts.join(" ｜ ")} (${h.model})`;
-    healthEl.className = `health ${h.ok ? "ok" : "err"}`;
+    lastHealthData = await res.json();
+    renderHealth();
   } catch {
-    healthEl.textContent = "無法連線後端";
-    healthEl.className = "health err";
+    lastHealthData = { error: true };
+    renderHealth();
   }
 }
 
@@ -346,7 +420,7 @@ async function sendTurn(body, contentType) {
   const turnBlobs = [];
   const offsetSec = sessionStartMs ? Math.round((Date.now() - sessionStartMs) / 100) / 10 : 0;
   const isAudioTurn = !contentType || !contentType.includes("application/json");
-  startThinkProgress(isAudioTurn ? "stt" : "llm", isAudioTurn ? "語音辨識中…" : "等待 AI 回應…");
+  startThinkProgress(isAudioTurn ? "stt" : "llm", isAudioTurn ? "thinkStt" : "thinkLlmWait");
 
   try {
     const headers = {
@@ -381,19 +455,19 @@ async function sendTurn(body, contentType) {
 
         if (ev === "status") {
           if (data.step === "stt") {
-            statusEl.textContent = "辨識語音中…";
-            setThinkStep("stt", "faster-whisper 語音辨識中…");
+            setStatus("statusStt");
+            setThinkStep("stt", "thinkStt");
           } else if (data.step === "llm_wait" || data.step === "llm") {
-            statusEl.textContent = "面試官思考中…";
-            setThinkStep("llm", "等待本地模型開始思考…");
+            setStatus("statusLlm");
+            setThinkStep("llm", "thinkLlmWait");
           } else if (data.step === "tts") {
-            statusEl.textContent = `正在合成第 ${data.index ?? 1} 句語音…`;
-            setThinkStep("tts", `VOICEVOX 合成第 ${data.index ?? 1} 句語音中…`);
+            setStatus("statusTts", { index: data.index ?? 1 });
+            setThinkStep("tts", "thinkTts", { index: data.index ?? 1 });
           }
           if (!playing) interviewerAvatar.setState("thinking");
         } else if (ev === "progress") {
           if (data.step === "llm_gen") {
-            setThinkStep("llm", `AI 生成回應中（已產生 ${data.chars ?? 0} 字）…`);
+            setThinkStep("llm", "thinkLlmGen", { chars: data.chars ?? 0 });
           }
         } else if (ev === "transcript") {
           if (data.text !== "面接を始めてください。") {
@@ -408,16 +482,16 @@ async function sendTurn(body, contentType) {
         } else if (ev === "audio") {
           enqueueAudio(data.wavBase64, turnBlobs);
         } else if (ev === "done") {
-          const turns = data.turnCount ?? 0;
-          const maxTurns = data.recommendedMaxTurns ?? 12;
-          turnBadge.textContent = `${turns}/${maxTurns} 輪`;
-          checkLimitNotice(turns, maxTurns);
-          finishThinkProgress("本輪回應完成");
-          statusEl.textContent = "輪到你回答（按住說話，結束後點「結束面試並評分」）";
+          lastTurnCount = data.turnCount ?? 0;
+          lastMaxTurns = data.recommendedMaxTurns ?? 12;
+          renderTurnBadge();
+          checkLimitNotice(lastTurnCount, lastMaxTurns);
+          finishThinkProgress("thinkDone");
+          setStatus("statusYourTurn");
           if (!playing) interviewerAvatar.setState("idle");
         } else if (ev === "error") {
-          finishThinkProgress(`發生錯誤：${data.message}`);
-          statusEl.textContent = `錯誤：${data.message}`;
+          finishThinkProgress("thinkError", { message: data.message });
+          setStatus("statusError", { message: data.message });
           if (!playing) interviewerAvatar.setState("idle");
         }
       }
@@ -434,12 +508,17 @@ async function sendTurn(body, contentType) {
 function checkLimitNotice(turns, maxTurns = 12) {
   const elapsedMin = sessionStartMs ? (Date.now() - sessionStartMs) / 60000 : 0;
   if (turns >= maxTurns + 2 || elapsedMin >= 22) {
-    limitBanner.textContent =
-      `已進行 ${turns} 輪（${Math.floor(elapsedMin)} 分鐘），接近本地模型 8K Context 與錄影記憶體上限；建議立即按「結束面試並評分」以確保報告品質與不產生幻覺。`;
+    limitBanner.textContent = t("limitHard", {
+      turns,
+      min: Math.floor(elapsedMin),
+    });
     limitBanner.classList.remove("hidden");
   } else if (turns >= maxTurns - 2 || elapsedMin >= 15) {
-    limitBanner.textContent =
-      `已達建議練習長度（${turns}/${maxTurns} 輪・${Math.floor(elapsedMin)} 分鐘），可準備收尾並按「結束面試並評分」。建議拆成多場 15 分鐘專題練習，效果最佳。`;
+    limitBanner.textContent = t("limitWarn", {
+      turns,
+      max: maxTurns,
+      min: Math.floor(elapsedMin),
+    });
     limitBanner.classList.remove("hidden");
   }
 }
@@ -481,10 +560,12 @@ btnStart.addEventListener("click", async () => {
   btnStart.disabled = true;
   reviewPanel.classList.add("hidden");
   limitBanner.classList.add("hidden");
-  turnBadge.textContent = "0/12 輪";
+  lastTurnCount = 0;
+  lastMaxTurns = 12;
+  renderTurnBadge();
   replayEl.classList.add("hidden");
   camEl.classList.remove("hidden");
-  statusEl.textContent = "開啟鏡頭與麥克風中…";
+  setStatus("statusCamInit");
 
   try {
     if (!mediaStream) {
@@ -493,10 +574,10 @@ btnStart.addEventListener("click", async () => {
     camEl.srcObject = mediaStream;
     camOffEl.style.display = "none";
   } catch {
-    camOffEl.textContent = "未取得鏡頭/麥克風權限（仍可用文字備用輸入）";
+    camOffEl.textContent = t("camDenied");
   }
 
-  statusEl.textContent = "建立面試場次…";
+  setStatus("statusSessionStart");
   const res = await fetch("/api/session/start", { method: "POST" });
   const data = await res.json();
   sessionId = data.sessionId;
@@ -505,12 +586,12 @@ btnStart.addEventListener("click", async () => {
   logEl.innerHTML = "";
   textInput.disabled = false;
   btnEndOnly.disabled = false;
-  btnFinish.textContent = "結束面試並評分";
+  btnFinish.textContent = t("btnFinish");
   btnFinish.disabled = false;
 
   startFullRecording();
   await sendTurn(JSON.stringify({ text: "面接を始めてください。" }), "application/json");
-  btnStart.textContent = "重新開始";
+  btnStart.textContent = t("btnRestart");
   btnStart.disabled = false;
 });
 
@@ -524,7 +605,7 @@ async function finalizeInterviewSession() {
   textInput.disabled = true;
   interviewerAvatar.setState("idle");
 
-  statusEl.textContent = "儲存整場錄影中…";
+  setStatus("statusSavingVideo");
   const videoBlob = await stopFullRecording();
   if (videoBlob && videoBlob.size > 0) {
     await fetch(`/api/session/${sessionId}/recording`, {
@@ -544,9 +625,9 @@ btnEndOnly.addEventListener("click", async () => {
   btnFinish.disabled = true;
   try {
     await finalizeInterviewSession();
-    btnFinish.textContent = "產生評分報告";
+    btnFinish.textContent = t("btnGenerateReview");
     btnFinish.disabled = false;
-    statusEl.textContent = "面試已結束（已儲存錄影，可點擊右側時間跳轉回放，或按「產生評分報告」）。";
+    setStatus("statusEndedOnly");
   } finally {
     btnStart.disabled = false;
   }
@@ -562,27 +643,21 @@ btnFinish.addEventListener("click", async () => {
 
   await finalizeInterviewSession();
 
-  statusEl.textContent = "正在切換至 gemma4:12b 產出評分報告（約 10–25 秒）…";
+  setStatus("statusReviewing");
   try {
     const res = await fetch(`/api/session/${sessionId}/review`, { method: "POST" });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "評分失敗");
+    if (!res.ok) throw new Error(data.error || "Review failed");
 
-    const m = data.metrics;
-    metricsBar.innerHTML = [
-      `有效回答 ${m.userTurns} 次`,
-      `總計 ${m.totalChars} 字（平均 ${m.avgCharsPerTurn} 字）`,
-      `填充詞 ${m.fillerTotal} 次`,
-    ]
-      .map((t) => `<span class="metric-chip">${t}</span>`)
-      .join("");
+    lastMetrics = data.metrics;
+    renderMetricsBar();
     reviewBody.textContent = data.report;
     reviewPanel.classList.remove("hidden");
-    btnFinish.textContent = "結束面試並評分";
-    statusEl.textContent = "復盤完成！可點擊右側逐字稿時間跳轉回放。";
+    btnFinish.textContent = t("btnFinish");
+    setStatus("statusReviewDone");
   } catch (err) {
     btnFinish.disabled = false;
-    statusEl.textContent = `評分失敗：${err.message}`;
+    setStatus("statusReviewFail", { message: err.message });
   } finally {
     btnStart.disabled = false;
   }
@@ -606,8 +681,8 @@ function startTalking() {
   turnRecorder.start();
   interviewerAvatar.setState("listening");
   btnTalk.classList.add("recording");
-  btnTalk.textContent = "錄音中…放開送出";
-  statusEl.textContent = "聆聽中…";
+  btnTalk.textContent = t("btnTalkRecording");
+  setStatus("statusListening");
 }
 
 function stopTalking() {
@@ -615,7 +690,7 @@ function stopTalking() {
     turnRecorder.stop();
     interviewerAvatar.setState("thinking");
     btnTalk.classList.remove("recording");
-    btnTalk.textContent = "按住說話（或按住空白鍵）";
+    btnTalk.textContent = t("btnTalkIdle");
   }
 }
 
@@ -652,9 +727,10 @@ btnReplayLast.addEventListener("click", () => {
 });
 btnExport.addEventListener("click", () => {
   if (!sessionId) return;
-  window.location.href = `/api/session/${sessionId}/export`;
+  window.location.href = `/api/session/${sessionId}/export?lang=${encodeURIComponent(getLang())}`;
 });
 
+applyAllLocale();
 loadSpeakers();
 checkHealth();
 setInterval(checkHealth, 15000);

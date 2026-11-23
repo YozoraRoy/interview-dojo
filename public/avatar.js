@@ -4,36 +4,37 @@
  */
 
 import { createAvatar3DEngine } from "./avatar3d.js";
+import { t } from "./i18n.js";
 
 const STORAGE_KEY = "interview_dojo_avatar_prefs_v1";
 const BLINK_MIN_MS = 2400;
 const BLINK_MAX_MS = 5200;
 const BLINK_DURATION_MS = 130;
 
-const STATE_LABELS = {
-  idle: "待命中",
-  listening: "聆聽中",
-  thinking: "思考中…",
-  speaking: "說話中",
+const STATE_KEY_MAP = {
+  idle: "stateIdle",
+  listening: "stateListening",
+  thinking: "stateThinking",
+  speaking: "stateSpeaking",
 };
 
 export const SVG_CHARACTERS = [
-  { id: "shiba", label: "柴犬部長（西裝）" },
-  { id: "suit", label: "Q版面試官（西裝）" },
+  { id: "shiba", labelKey: "charSvgShiba" },
+  { id: "suit", labelKey: "charSvgSuit" },
 ];
 
 export const THREE_D_CHARACTERS = [
-  { id: "business_man", label: "3D 男性面試官（商務襯衫）" },
-  { id: "shiba_3d", label: "3D 柴犬部長（西裝）" },
-  { id: "custom_vrm", label: "自訂本地 .vrm 3D 角色…" },
+  { id: "business_man", labelKey: "char3dMan" },
+  { id: "shiba_3d", labelKey: "char3dShiba" },
+  { id: "custom_vrm", labelKey: "char3dCustom" },
 ];
 
 export const RIVE_CHARACTERS = [
-  { id: "avatar1", label: "Rive 人物 A（眼鏡面試官）", src: "rive/avatar-pack.riv", artboard: "Avatar 1" },
-  { id: "avatar2", label: "Rive 人物 B（親切面試官）", src: "rive/avatar-pack.riv", artboard: "Avatar 2" },
-  { id: "avatar3", label: "Rive 人物 C（活潑面試官）", src: "rive/avatar-pack.riv", artboard: "Avatar 3" },
-  { id: "teddy", label: "Rive 泰迪熊玩偶", src: "rive/teddy.riv", artboard: "Teddy" },
-  { id: "custom", label: "自訂本地 .riv 角色…" },
+  { id: "avatar1", labelKey: "charRiveA1", src: "rive/avatar-pack.riv", artboard: "Avatar 1" },
+  { id: "avatar2", labelKey: "charRiveA2", src: "rive/avatar-pack.riv", artboard: "Avatar 2" },
+  { id: "avatar3", labelKey: "charRiveA3", src: "rive/avatar-pack.riv", artboard: "Avatar 3" },
+  { id: "teddy", labelKey: "charRiveTeddy", src: "rive/teddy.riv", artboard: "Teddy" },
+  { id: "custom", labelKey: "charRiveCustom" },
 ];
 
 function loadPrefs() {
@@ -317,7 +318,7 @@ export function createInterviewerAvatar(container) {
   function renderSvgCharacter() {
     const isSuit = prefs.svgCharacter === "suit";
     svgHostEl.innerHTML = isSuit ? buildSuitPersonSvg() : buildShibaSvg();
-    nameEl.textContent = isSuit ? "面接官・佐藤" : "面接官・柴犬部長";
+    nameEl.textContent = t(isSuit ? "badgeSvgSuit" : "badgeSvgShiba");
     svgRefs = {
       eyesOpen: svgHostEl.querySelector(".avatar-eyes-open"),
       eyesClosed: svgHostEl.querySelector(".avatar-eyes-closed"),
@@ -421,7 +422,7 @@ export function createInterviewerAvatar(container) {
     nameEl.textContent = `Rive・${label}`;
 
     if (!window.rive?.Rive) {
-      riveHintEl.textContent = "Rive 執行環境未載入（請確認 public/vendor/rive.js）";
+      riveHintEl.textContent = t("hintRiveNoRuntime");
       riveHintEl.classList.remove("hidden");
       return;
     }
@@ -449,7 +450,7 @@ export function createInterviewerAvatar(container) {
         }
       },
       onLoadError: () => {
-        riveHintEl.textContent = "無法載入此 .riv 檔案，請重新選擇或切換回方案一。";
+        riveHintEl.textContent = t("hintRiveError");
         riveHintEl.classList.remove("hidden");
       },
     };
@@ -471,12 +472,12 @@ export function createInterviewerAvatar(container) {
         if (prefs.customRiveBase64) {
           initRiveFromSource({
             buffer: base64ToArrayBuffer(prefs.customRiveBase64),
-            label: prefs.customRiveName || "自訂角色",
+            label: prefs.customRiveName || t("charRiveCustom"),
           });
         } else {
           cleanupRive();
-          nameEl.textContent = "Rive・尚未選擇檔案";
-          riveHintEl.textContent = "請點擊右上角「載入 .riv」選擇本地 Rive 角色檔";
+          nameEl.textContent = t("badgeRivePick");
+          riveHintEl.textContent = t("hintRivePick");
           riveHintEl.classList.remove("hidden");
         }
       } else {
@@ -484,7 +485,7 @@ export function createInterviewerAvatar(container) {
         initRiveFromSource({
           src: ch.src,
           artboard: ch.artboard,
-          label: ch.label.replace(/^Rive\s*/, ""),
+          label: t(ch.labelKey).replace(/^Rive\s*/, ""),
         });
       }
     } else if (prefs.mode === "3d") {
@@ -497,20 +498,20 @@ export function createInterviewerAvatar(container) {
       engine3d.setState(currentState);
       if (prefs.threeDCharacter === "custom_vrm") {
         if (customVrmBuffer) {
-          nameEl.textContent = `3D VRM・${prefs.customVrmName || "自訂角色"}`;
+          nameEl.textContent = t("badge3dVrm", { name: prefs.customVrmName || "VRM" });
           engine3d.loadVrmBuffer(customVrmBuffer).catch(() => {
-            threeHintEl.textContent = "VRM 模型載入失敗，請確認檔案格式。";
+            threeHintEl.textContent = t("hintVrmError");
             threeHintEl.classList.remove("hidden");
           });
         } else {
-          nameEl.textContent = "3D VRM・請選擇檔案";
-          threeHintEl.textContent = "請點擊右上角「載入 .vrm」選擇本地 VRoid 模型（VRM 檔案較大，重新整理後需重新挑選）";
+          nameEl.textContent = t("badge3dPick");
+          threeHintEl.textContent = t("hintVrmPick");
           threeHintEl.classList.remove("hidden");
           engine3d.loadBuiltIn("business_man");
         }
       } else {
         const ch = THREE_D_CHARACTERS.find((c) => c.id === prefs.threeDCharacter) ?? THREE_D_CHARACTERS[0];
-        nameEl.textContent = ch.id === "shiba_3d" ? "3D・柴犬部長" : "3D・商務面試官";
+        nameEl.textContent = t(ch.id === "shiba_3d" ? "badge3dShiba" : "badge3dMan");
         engine3d.loadBuiltIn(ch.id);
       }
     } else {
@@ -566,9 +567,9 @@ export function createInterviewerAvatar(container) {
   }
 
   function setState(nextState) {
-    currentState = STATE_LABELS[nextState] ? nextState : "idle";
+    currentState = STATE_KEY_MAP[nextState] ? nextState : "idle";
     frameEl.setAttribute("data-state", currentState);
-    stateTextEl.textContent = STATE_LABELS[currentState];
+    stateTextEl.textContent = t(STATE_KEY_MAP[currentState]);
     if (svgRefs?.thought) {
       svgRefs.thought.setAttribute("opacity", currentState === "thinking" ? "1" : "0");
     }
@@ -670,6 +671,32 @@ export function createInterviewerAvatar(container) {
   scheduleBlink();
   rafId = requestAnimationFrame(tick);
 
+  function refreshLocale() {
+    stateTextEl.textContent = t(STATE_KEY_MAP[currentState] || "stateIdle");
+    if (prefs.mode === "svg") {
+      nameEl.textContent = t(prefs.svgCharacter === "suit" ? "badgeSvgSuit" : "badgeSvgShiba");
+    } else if (prefs.mode === "3d") {
+      if (prefs.threeDCharacter === "custom_vrm") {
+        nameEl.textContent = customVrmBuffer
+          ? t("badge3dVrm", { name: prefs.customVrmName || "VRM" })
+          : t("badge3dPick");
+        if (!customVrmBuffer) threeHintEl.textContent = t("hintVrmPick");
+      } else {
+        nameEl.textContent = t(prefs.threeDCharacter === "shiba_3d" ? "badge3dShiba" : "badge3dMan");
+      }
+    } else if (prefs.mode === "rive") {
+      if (prefs.riveCharacter === "custom") {
+        nameEl.textContent = prefs.customRiveBase64
+          ? `Rive・${prefs.customRiveName || ""}`
+          : t("badgeRivePick");
+        if (!prefs.customRiveBase64) riveHintEl.textContent = t("hintRivePick");
+      } else {
+        const ch = RIVE_CHARACTERS.find((c) => c.id === prefs.riveCharacter) ?? RIVE_CHARACTERS[0];
+        nameEl.textContent = `Rive・${t(ch.labelKey).replace(/^Rive\s*/, "")}`;
+      }
+    }
+  }
+
   return {
     setState,
     setMouthOpen,
@@ -679,6 +706,7 @@ export function createInterviewerAvatar(container) {
     loadCustomRiveBuffer,
     loadCustomVrmBuffer,
     getPreferences,
+    refreshLocale,
     destroy,
   };
 }

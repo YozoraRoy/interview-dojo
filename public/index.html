@@ -18,31 +18,36 @@
 <body>
   <header>
     <div class="brand">
-      interview-dojo <span class="badge">全本地運行</span>
-      <span id="recBadge" class="rec-badge hidden">● REC <span id="timer">00:00</span> ｜ <span id="turnBadge">0/12 輪</span></span>
+      interview-dojo <span class="badge" data-i18n="brandBadge">完全ローカル</span>
+      <span id="recBadge" class="rec-badge hidden">● REC <span id="timer">00:00</span> ｜ <span id="turnBadge">0/12回</span></span>
     </div>
     <div class="toolbar">
-      <div class="avatar-controls" title="切換虛擬面試官渲染方案與人物（會自動記憶）">
-        <div class="seg-group" role="group" aria-label="渲染方案">
-          <button id="btnModeSvg" type="button" class="seg-btn active">方案一 SVG</button>
-          <button id="btnMode3d" type="button" class="seg-btn">方案二 3D</button>
-          <button id="btnModeRive" type="button" class="seg-btn">方案三 Rive</button>
+      <div class="avatar-controls" data-i18n-title="avatarControlsTitle" title="バーチャル面接官の描画方式とキャラクターを切替（自動保存）">
+        <div class="seg-group" role="group" aria-label="Render Engine">
+          <button id="btnModeSvg" type="button" class="seg-btn active" data-i18n="modeSvg">方式1 SVG</button>
+          <button id="btnMode3d" type="button" class="seg-btn" data-i18n="mode3d">方式2 3D</button>
+          <button id="btnModeRive" type="button" class="seg-btn" data-i18n="modeRive">方式3 Rive</button>
         </div>
-        <select id="characterSelect" aria-label="選擇面試官人物"></select>
-        <button id="btnLoadRive" type="button" class="btn small hidden">載入 .riv</button>
+        <select id="characterSelect" data-i18n-aria="avatarSelectAria" aria-label="面接官キャラクターを選択"></select>
+        <button id="btnLoadRive" type="button" class="btn small hidden" data-i18n="btnLoadRive">.riv 読込</button>
         <input id="riveFileInput" type="file" accept=".riv" class="hidden" />
-        <button id="btnLoadVrm" type="button" class="btn small hidden">載入 .vrm</button>
+        <button id="btnLoadVrm" type="button" class="btn small hidden" data-i18n="btnLoadVrm">.vrm 読込</button>
         <input id="vrmFileInput" type="file" accept=".vrm" class="hidden" />
       </div>
       <label class="voice-label">
-        面試官聲音
+        <span data-i18n="voiceLabel">面接官の声</span>
         <select id="speakerSelect"></select>
       </label>
       <label class="voice-label">
-        語速 <span id="speedVal">1.05</span>x
+        <span data-i18n="speedLabel">話速</span> <span id="speedVal">1.05</span>x
         <input id="speedRange" type="range" min="0.85" max="1.35" step="0.05" value="1.05" />
       </label>
-      <div id="health" class="health">檢查服務中…</div>
+      <select id="langSelect" class="lang-select" data-i18n-aria="langAria" aria-label="表示言語">
+        <option value="ja">🌐 日本語</option>
+        <option value="en">🌐 English</option>
+        <option value="zh-TW">🌐 繁體中文</option>
+      </select>
+      <div id="health" class="health" data-i18n="healthChecking">サービス確認中…</div>
     </div>
   </header>
 
@@ -53,45 +58,45 @@
         <div class="video-box">
           <video id="cam" autoplay muted playsinline></video>
           <video id="replay" class="hidden" controls playsinline></video>
-          <div id="camOff" class="cam-off">尚未開啟鏡頭（點擊「開始面試」授權）</div>
+          <div id="camOff" class="cam-off" data-i18n="camOff">カメラ未起動（「面接開始」を押して許可してください）</div>
         </div>
       </div>
 
       <div class="interviewer-bar">
-        <div class="avatar" id="avatar">官</div>
-        <div class="subtitle" id="subtitle">選擇面試官聲音後，點擊「開始面試」。</div>
-        <button id="btnReplayLast" type="button" class="btn small replay-btn" disabled title="重播面試官剛才說的話">🔊 重播</button>
+        <div class="avatar" id="avatar" data-i18n="avatarBadgeChar">官</div>
+        <div class="subtitle" id="subtitle" data-i18n="subtitleInit">面接官の声を選択して「面接開始」をクリックしてください。</div>
+        <button id="btnReplayLast" type="button" class="btn small replay-btn" disabled data-i18n="btnReplayLast" data-i18n-title="btnReplayLastTitle" title="直前の面接官の発話を再生">🔊 もう一度</button>
       </div>
 
       <div id="thinkProgress" class="think-progress hidden" aria-live="polite">
         <div class="think-steps">
-          <span class="think-step" data-step="stt">① 辨識語音</span>
+          <span class="think-step" data-step="stt" data-i18n="stepStt">① 音声認識</span>
           <span class="think-arrow">›</span>
-          <span class="think-step" data-step="llm">② AI 思考生成</span>
+          <span class="think-step" data-step="llm" data-i18n="stepLlm">② AI 思考生成</span>
           <span class="think-arrow">›</span>
-          <span class="think-step" data-step="tts">③ 合成語音</span>
+          <span class="think-step" data-step="tts" data-i18n="stepTts">③ 音声合成</span>
         </div>
         <div class="think-meta">
-          <span id="thinkDetail">準備中…</span>
+          <span id="thinkDetail" data-i18n="thinkReady">準備中…</span>
           <span id="thinkElapsed" class="think-elapsed">0.0s</span>
         </div>
       </div>
 
       <div class="controls">
-        <button id="btnStart" class="btn primary">開始面試</button>
-        <button id="btnTalk" class="btn talk" disabled>按住說話（或按住空白鍵）</button>
-        <button id="btnEndOnly" class="btn" disabled title="僅結束面試與儲存錄影，不觸發 AI 評分">結束面試</button>
-        <button id="btnFinish" class="btn danger" disabled>結束面試並評分</button>
+        <button id="btnStart" class="btn primary" data-i18n="btnStart">面接開始</button>
+        <button id="btnTalk" class="btn talk" disabled data-i18n="btnTalkIdle">長押しで話す（または Space キー）</button>
+        <button id="btnEndOnly" class="btn" disabled data-i18n="btnEndOnly" data-i18n-title="btnEndOnlyTitle" title="面接を終了して録画を保存（AI評価は行いません）">面接終了</button>
+        <button id="btnFinish" class="btn danger" disabled data-i18n="btnFinish">終了して評価</button>
       </div>
-      <div id="status" class="status">待命中</div>
+      <div id="status" class="status" data-i18n="statusIdle">待機中</div>
       <div id="limitBanner" class="limit-banner hidden"></div>
 
       <section id="reviewPanel" class="review-panel hidden">
         <div class="review-header">
-          <h2>面試復盤報告（gemma4:12b）</h2>
+          <h2 data-i18n="reviewTitle">面接振り返りレポート（gemma4:12b）</h2>
           <div class="review-actions">
             <div id="metricsBar" class="metrics-bar"></div>
-            <button id="btnExport" class="btn primary small">匯出 HTML 報告</button>
+            <button id="btnExport" class="btn primary small" data-i18n="btnExport">HTML レポート出力</button>
           </div>
         </div>
         <pre id="reviewBody" class="review-body"></pre>
@@ -99,17 +104,17 @@
     </section>
 
     <aside class="transcript-panel">
-      <h2>對話紀錄 <span class="hint">（結束後點擊時間可跳轉回放）</span></h2>
+      <h2><span data-i18n="transcriptTitle">会話ログ</span> <span class="hint" data-i18n="transcriptHint">（終了後に時刻をクリックすると該当シーンへジャンプ）</span></h2>
       <div id="log" class="log"></div>
       <form id="textForm" class="text-form">
-        <input id="textInput" type="text" placeholder="備用：也可以直接輸入日文送出…" disabled />
-        <button id="btnSend" type="submit" disabled>送出</button>
+        <input id="textInput" type="text" data-i18n-placeholder="textPlaceholder" placeholder="予備：日本語テキストを直接入力して送信…" disabled />
+        <button id="btnSend" type="submit" disabled data-i18n="btnSend">送信</button>
       </form>
     </aside>
   </main>
 
   <footer id="footerCredit">
-    音訊由 VOICEVOX 合成（VOICEVOX:青山龍星）｜所有錄影與評分僅存本機
+    音声合成：VOICEVOX（VOICEVOX:青山龍星）｜すべての録画と評価はローカルのみに保存されます
   </footer>
 
   <script src="vendor/rive.js"></script>

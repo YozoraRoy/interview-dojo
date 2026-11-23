@@ -76,7 +76,8 @@ header {
   background: var(--accent);
   color: #ffffff;
 }
-.avatar-controls select {
+.avatar-controls select,
+.lang-select {
   background: var(--bg);
   color: var(--text);
   border: 1px solid var(--border);

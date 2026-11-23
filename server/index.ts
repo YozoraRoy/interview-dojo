@@ -283,6 +283,8 @@ app.get("/api/session/:id/export", async (req, res) => {
     // 尚未產生評分報告時仍可匯出對話紀錄
   }
 
+  const rawLang = typeof req.query.lang === "string" ? req.query.lang : "zh-TW";
+  const lang = rawLang === "ja" || rawLang === "en" ? rawLang : "zh-TW";
   const metrics = computeMetrics(session.messages);
   const html = renderHtmlReport({
     sessionId: session.id,
@@ -290,6 +292,7 @@ app.get("/api/session/:id/export", async (req, res) => {
     metrics,
     turns: session.messages,
     report,
+    lang,
   });
 
   res.setHeader("Content-Type", "text/html; charset=utf-8");
