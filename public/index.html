@@ -91,6 +91,53 @@
       <div id="status" class="status" data-i18n="statusIdle">待機中</div>
       <div id="limitBanner" class="limit-banner hidden"></div>
 
+      <details id="personaDrawer" class="persona-drawer">
+        <summary data-i18n="personaDrawerTitle">応募者プロフィール／職務経歴設定（任意・外部 persona.yaml を読込）</summary>
+        <div class="persona-body">
+          <div class="persona-section">
+            <div class="persona-row-head">
+              <span data-i18n="resumeSourceLabel">経歴テキスト貼付または .txt / .md 読込（任意・50KB / 6000文字まで）</span>
+              <span id="resumeCharCount" class="char-counter">0 / 6000</span>
+            </div>
+            <textarea id="resumeInput" rows="4" maxlength="6000" data-i18n-placeholder="resumePlaceholder" placeholder="職務経歴や自己PRを貼り付けるか、下のボタンから .txt / .md を読み込んでください…"></textarea>
+            <div class="persona-actions">
+              <button id="btnImportResume" type="button" class="btn small" data-i18n="btnImportResume">.txt / .md 読込</button>
+              <input id="resumeFileInput" type="file" accept=".txt,.md" class="hidden" />
+              <button id="btnSummarizeResume" type="button" class="btn small primary" data-i18n="btnSummarizeResume">AI 要点要約（e4b）</button>
+            </div>
+          </div>
+
+          <div class="persona-section">
+            <div class="persona-row-head">
+              <span data-i18n="personaAppliedLabel">面接官へ渡す要約プロフィール（800文字以内に自動制限）</span>
+              <span id="personaPromptCount" class="char-counter">0 / 800</span>
+            </div>
+            <div class="persona-grid">
+              <label>
+                <span data-i18n="personaNameLabel">氏名／ニックネーム</span>
+                <input id="personaName" type="text" maxlength="80" />
+              </label>
+              <label>
+                <span data-i18n="personaRoleLabel">志望職種</span>
+                <input id="personaRole" type="text" maxlength="120" />
+              </label>
+              <label>
+                <span data-i18n="personaYearsLabel">経験年数</span>
+                <input id="personaYears" type="number" min="0" max="60" step="0.5" />
+              </label>
+            </div>
+            <label class="persona-highlights-label">
+              <span data-i18n="personaHighlightsLabel">主な実績（1行1項目・最大5件）</span>
+              <textarea id="personaHighlights" rows="4"></textarea>
+            </label>
+            <div class="persona-actions">
+              <button id="btnSavePersona" type="button" class="btn small primary" data-i18n="btnSavePersona">保存して適用</button>
+              <span id="personaMsg" class="persona-msg"></span>
+            </div>
+          </div>
+        </div>
+      </details>
+
       <section id="reviewPanel" class="review-panel hidden">
         <div class="review-header">
           <h2 data-i18n="reviewTitle">面接振り返りレポート（gemma4:12b）</h2>

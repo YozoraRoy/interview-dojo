@@ -7,7 +7,17 @@ import { config } from "./config.ts";
 import { renderHtmlReport } from "./export.ts";
 import { generateReview, streamChat, unloadModel } from "./llm.ts";
 import { computeMetrics, type TurnEntry } from "./metrics.ts";
-import { buildSystemPrompt, loadPersona } from "./persona.ts";
+import {
+  buildSystemPrompt,
+  isAllowedResumeFileName,
+  loadPersona,
+  MAX_PERSONA_PROMPT_CHARS,
+  MAX_RESUME_FILE_BYTES,
+  MAX_RESUME_INPUT_CHARS,
+  savePersona,
+  summarizeResumeToPersona,
+  type Persona,
+} from "./persona.ts";
 import { SentenceSplitter } from "./sentences.ts";
 import { listSpeakers, synthesize, transcribe, unloadStt } from "./speech.ts";
 
@@ -66,6 +76,56 @@ app.get("/api/health", async (_req, res) => {
 app.get("/api/speakers", async (_req, res) => {
   const speakers = await listSpeakers();
   res.json({ defaultSpeaker: config.voicevoxSpeaker, speakers });
+});
+
+app.get("/api/persona", async (_req, res) => {
+  const persona = await loadPersona();
+  res.json({
+    persona,
+    limits: {
+      maxInputChars: MAX_RESUME_INPUT_CHARS,
+      maxPromptChars: MAX_PERSONA_PROMPT_CHARS,
+      maxFileBytes: MAX_RESUME_FILE_BYTES,
+    },
+  });
+});
+
+app.put("/api/persona", express.json({ limit: "64kb" }), async (req, res) => {
+  const body = (req.body ?? {}) as Persona;
+  const saved = await savePersona(body);
+  res.json({ ok: true, persona: saved });
+});
+
+app.post("/api/persona/summarize", express.json({ limit: "128kb" }), async (req, res) => {
+  const body = (req.body ?? {}) as {
+    text?: string;
+    fileName?: string;
+    fileSize?: number;
+  };
+  if (body.fileName && !isAllowedResumeFileName(body.fileName)) {
+    res.status(400).json({ error: "僅支援 .txt 或 .md 純文字檔案。" });
+    return;
+  }
+  if (typeof body.fileSize === "number" && body.fileSize > MAX_RESUME_FILE_BYTES) {
+    res.status(400).json({ error: "檔案大小不可超過 50 KB。" });
+    return;
+  }
+  const text = typeof body.text === "string" ? body.text.trim() : "";
+  if (!text) {
+    res.status(400).json({ error: "請輸入或匯入履歷內容。" });
+    return;
+  }
+  if (text.length > MAX_RESUME_INPUT_CHARS) {
+    res.status(400).json({ error: `內容不可超過 ${MAX_RESUME_INPUT_CHARS} 字元。` });
+    return;
+  }
+  try {
+    const persona = await summarizeResumeToPersona(text);
+    res.json({ persona });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    res.status(500).json({ error: msg });
+  }
 });
 
 app.post("/api/session/start", async (_req, res) => {

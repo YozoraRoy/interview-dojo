@@ -132,6 +132,18 @@ const metricsBar = $("metricsBar");
 const reviewBody = $("reviewBody");
 const btnExport = $("btnExport");
 const footerCredit = $("footerCredit");
+const resumeInput = $("resumeInput");
+const resumeCharCount = $("resumeCharCount");
+const btnImportResume = $("btnImportResume");
+const resumeFileInput = $("resumeFileInput");
+const btnSummarizeResume = $("btnSummarizeResume");
+const personaNameEl = $("personaName");
+const personaRoleEl = $("personaRole");
+const personaYearsEl = $("personaYears");
+const personaHighlightsEl = $("personaHighlights");
+const personaPromptCount = $("personaPromptCount");
+const btnSavePersona = $("btnSavePersona");
+const personaMsgEl = $("personaMsg");
 
 let sessionId = null;
 let sessionStartMs = 0;
@@ -730,7 +742,150 @@ btnExport.addEventListener("click", () => {
   window.location.href = `/api/session/${sessionId}/export?lang=${encodeURIComponent(getLang())}`;
 });
 
+const MAX_RESUME_CHARS = 6000;
+const MAX_PROMPT_CHARS = 800;
+const MAX_FILE_BYTES = 50 * 1024;
+let lastImportedFileName = "";
+let lastImportedFileSize = 0;
+
+function updateResumeCounts() {
+  const len = resumeInput.value.length;
+  resumeCharCount.textContent = `${len} / ${MAX_RESUME_CHARS}`;
+  resumeCharCount.classList.toggle("over", len >= MAX_RESUME_CHARS);
+
+  const preview = [
+    personaNameEl.value.trim(),
+    personaRoleEl.value.trim(),
+    personaYearsEl.value.trim(),
+    ...personaHighlightsEl.value.split(/\r?\n/).map((s) => s.trim()).filter(Boolean).slice(0, 5),
+  ].join("\n");
+  const pLen = preview.length;
+  personaPromptCount.textContent = `${pLen} / ${MAX_PROMPT_CHARS}`;
+  personaPromptCount.classList.toggle("over", pLen > MAX_PROMPT_CHARS);
+}
+
+function setPersonaMsg(text, isErr = false) {
+  personaMsgEl.textContent = text;
+  personaMsgEl.classList.toggle("err", isErr);
+}
+
+function fillPersonaForm(p = {}) {
+  personaNameEl.value = p.name ?? "";
+  personaRoleEl.value = p.target_role ?? "";
+  personaYearsEl.value = p.years !== undefined ? String(p.years) : "";
+  personaHighlightsEl.value = Array.isArray(p.highlights) ? p.highlights.join("\n") : "";
+  updateResumeCounts();
+}
+
+async function loadPersonaForm() {
+  try {
+    const res = await fetch("/api/persona");
+    if (!res.ok) return;
+    const data = await res.json();
+    fillPersonaForm(data.persona);
+  } catch {
+    // 忽略
+  }
+}
+
+resumeInput.addEventListener("input", () => {
+  lastImportedFileName = "";
+  lastImportedFileSize = 0;
+  updateResumeCounts();
+});
+[personaNameEl, personaRoleEl, personaYearsEl, personaHighlightsEl].forEach((el) => {
+  el.addEventListener("input", updateResumeCounts);
+});
+
+btnImportResume.addEventListener("click", () => resumeFileInput.click());
+resumeFileInput.addEventListener("change", async () => {
+  const file = resumeFileInput.files?.[0];
+  resumeFileInput.value = "";
+  if (!file) return;
+
+  if (!/\.(txt|md)$/i.test(file.name)) {
+    setPersonaMsg(t("personaErrExt"), true);
+    return;
+  }
+  if (file.size > MAX_FILE_BYTES) {
+    setPersonaMsg(t("personaErrSize"), true);
+    return;
+  }
+  const text = await file.text();
+  lastImportedFileName = file.name;
+  lastImportedFileSize = file.size;
+  if (text.length > MAX_RESUME_CHARS) {
+    resumeInput.value = text.slice(0, MAX_RESUME_CHARS);
+    setPersonaMsg(t("personaTruncated"), true);
+  } else {
+    resumeInput.value = text;
+    setPersonaMsg("");
+  }
+  updateResumeCounts();
+});
+
+btnSummarizeResume.addEventListener("click", async () => {
+  const text = resumeInput.value.trim();
+  if (!text) {
+    setPersonaMsg(t("personaErrEmpty"), true);
+    return;
+  }
+  btnSummarizeResume.disabled = true;
+  setPersonaMsg(t("personaSummarizing"));
+  try {
+    const res = await fetch("/api/persona/summarize", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        text: text.slice(0, MAX_RESUME_CHARS),
+        fileName: lastImportedFileName || undefined,
+        fileSize: lastImportedFileSize || undefined,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Summarize failed");
+    fillPersonaForm(data.persona);
+    setPersonaMsg(t("personaSummarized"));
+  } catch (err) {
+    setPersonaMsg(t("personaErrGeneric", { message: err.message }), true);
+  } finally {
+    btnSummarizeResume.disabled = false;
+  }
+});
+
+btnSavePersona.addEventListener("click", async () => {
+  const highlights = personaHighlightsEl.value
+    .split(/\r?\n/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .slice(0, 5);
+  const yearsVal = personaYearsEl.value.trim();
+  const payload = {
+    name: personaNameEl.value.trim(),
+    target_role: personaRoleEl.value.trim(),
+    years: yearsVal ? Number(yearsVal) : undefined,
+    highlights,
+  };
+  btnSavePersona.disabled = true;
+  try {
+    const res = await fetch("/api/persona", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Save failed");
+    fillPersonaForm(data.persona);
+    setPersonaMsg(t("personaSaved"));
+  } catch (err) {
+    setPersonaMsg(t("personaErrGeneric", { message: err.message }), true);
+  } finally {
+    btnSavePersona.disabled = false;
+  }
+});
+
 applyAllLocale();
+loadPersonaForm();
 loadSpeakers();
 checkHealth();
 setInterval(checkHealth, 15000);
