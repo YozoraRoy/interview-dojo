@@ -30,6 +30,9 @@ models/
 .cache/
 
 # === 建置產物 ===
+.next/
+next-env.d.ts
+tsconfig.tsbuildinfo
 node_modules/
 dist/
 build/

@@ -2,74 +2,48 @@
 
 # interview-dojo
 
-**100% 本地運行、零 API 費用（$0）** 的 AI 視訊模擬面試練習工具，專為**中途採用（資深軟體工程師／Tech Lead／架構師／PM）**設計，目前以**日文商務與技術面試**為主。
+專為 **資深軟體工程師、Tech Lead 與工程經理 / PM** 打造的 **本地優先、支援本地／雲端混搭 LLM** 的日文商務與技術模擬面試道場（基於 **Next.js 16.4+ App Router 與 Cache Components**）。
 
-所有服務皆綁定於 `127.0.0.1`，你的視訊錄影、麥克風音訊、履歷資料（`persona.yaml`）、逐字稿與評分報告**完全不會離開你的電腦**。
+所有服務皆嚴格綁定 `127.0.0.1` —— 鏡頭錄影、麥克風音訊、個人履歷（`persona.yaml`）、逐字稿與 BYOK API Key 皆保留在本機。預設可使用本地 Ollama **零成本（$0）全離線運行**，也可選配外部 LLM API Key，將履歷濃縮與事後深度復盤路由至雲端模型並自動保底降級。
 
-![interview-dojo 執行畫面示意圖](docs/ui-preview.svg)
+![interview-dojo UI Preview](docs/ui-preview.svg)
 
 ---
 
 ## 核心功能
 
-- **低延遲按住說話循環：** 按住按鈕或空白鍵說話 → `faster-whisper`（`large-v3-turbo`, CUDA）辨識日英夾雜技術名詞 → Ollama（`gemma4:e4b`）串流追問 → `VOICEVOX` 逐句合成 WAV 語音播放。
-- **本地虛擬面試官（三種渲染方案切換＋記憶設定）：**
-  - **方案一（SVG）：** 輕量 2D 分層立繪（穿西裝的「柴犬部長」、Q版「佐藤面試官」），支援 Web Audio 即時口型同步與隨機眨眼。
-  - **方案二（3D / VRM）：** 透過 Three.js + `@pixiv/three-vrm` 驅動「商務襯衫男性面試官」與「3D 西裝柴犬」，並支援載入本地 `.vrm` 模型，綁定有限狀態機（待命／聆聽／思考／說話）。
-  - **方案三（Rive）：** 使用本機 `@rive-app/canvas` 載入狀態機角色（內建人物組、泰迪熊或自訂 `.riv` 檔）。
-  - 畫面上可隨時切換方案與人物，並自動透過 `localStorage` 記憶預設偏好。
-- **即時思考進度與語音重播：** 顯示三階段進度條（`① 辨識語音 › ② AI 思考生成（即時字數） › ③ 合成語音`）與讀秒計時；字幕列及每則面試官逐字稿皆附帶 `🔊 重播` 按鈕，可零延遲重聽剛才的提問。
-- **面試官聲音與語速切換：** 內建多種精選聲線（成熟男聲「青山龍星」、干練男聲「玄野武宏」、專業女聲「No.7」、溫柔女聲「九州そら」、趣味少年音「ずんだもん」等），支援 `0.85x–1.35x` 語速微調。
-- **全程錄影與時間軸點擊回放：** 開始面試即同步錄下鏡頭與麥克風（`.webm`）。結束後點擊右側逐字稿的任一時間標記（如 `[00:12]`），影片立即跳轉至該秒數重播。
-- **8 GB VRAM 友善的事後復盤與口語診斷（`gemma4:12b`）：**
-  - 結束面試時自動卸載即時模型與 STT 模型，再載入 `gemma4:12b`，確保 8 GB 顯卡不爆顯存。
-  - 依四大維度評分：**結論先行（結論ファースト）**、**架構與技術取捨（Trade-off）**、**PM／團隊領導協調**、**商務日語自然度與敬語**。
-  - 本地程式量化統計回答次數、平均字數、日文填充詞（`えー / えっと / あの` 等）出現次數。
-  - 產出**「口語不清診斷與道地日文改寫（朗讀練習專區）」**，直接對照原話與可開口照唸的專業日文說法。
-- **一鍵匯出單一 HTML 報告：** 將量化指標、AI 評分與含時間戳記的完整對話紀錄匯出成單一離線 HTML 檔（內建列印樣式，可直接另存 PDF）。
-
----
-
-## 系統架構與 8 GB VRAM 分配
-
-```mermaid
-flowchart LR
-  Browser["瀏覽器 (getUserMedia + MediaRecorder)"] -->|音訊 / 文字| Node["Node 協調層 (127.0.0.1:3000)"]
-  Node -->|POST /transcribe| STT["faster-whisper FastAPI (127.0.0.1:8001)"]
-  Node -->|串流對話| Ollama["Ollama (127.0.0.1:11434)"]
-  Node -->|逐句合成佇列| VV["VOICEVOX Engine (127.0.0.1:50021)"]
-  Node -->|存於 repo 外部| Private[("PRIVATE_DATA_DIR / data/")]
-```
-
-| 階段 | GPU 上駐留模型 | 約略 VRAM 用量（8 GB 卡） |
-|---|---|---|
-| **即時面試中** | `gemma4:e4b` ＋ `faster-whisper large-v3-turbo (float16)` | 約 6.4 GB / 8.0 GB（VOICEVOX 跑在 CPU） |
-| **面試後復盤** | 先卸載 `gemma4:e4b` 與 STT，再載入 `gemma4:12b` | 約 7–8 GB（必要時自動混合 RAM） |
-
----
-
-## 環境需求
-
-- **作業系統：** Windows 10/11（已實測）或 Linux/macOS（`.ps1` 腳本需自行對應調整）
-- **硬體：** 建議 NVIDIA 8 GB VRAM 以上顯卡（實測於 RTX 4060 Laptop 8 GB + 32 GB RAM）
-- **軟體：** Node.js `>= 24`、`pnpm`、Python `3.12+`、[Ollama](https://ollama.com/)、[VOICEVOX Engine](https://github.com/VOICEVOX/voicevox_engine/releases)（建議 CPU 版以節省顯存）
+- **Next.js 16.4+ App Router 與 Cache Components：**
+  - `/`：即時模擬面試主舞台（Partial Prerendering 靜態外殼＋`<Suspense>` 串流載入）。
+  - `/sessions` 與 `/sessions/[id]`：歷史面試列表、支援 HTTP `206 Partial Content` `Range` 時間軸跳轉的錄影回放與復盤報告瀏覽。
+  - `/settings`：語音預設、BYOK 外部 API Key 設定與即時連線測試（`POST /api/llm/test`）。
+- **本地／雲端三層混搭路由（BYOK 與成本防護）：**
+  - 原生 `fetch` 零肥大依賴支援 **Ollama**、**Google Gemini**、**OpenRouter**、**OpenAI**、**Groq** 與 **DeepSeek**。
+  - **聰明分工**：即時對話預設走本地 Ollama（或可手動切換雲端 Tier 1）；履歷濃縮（`Tier 2`）與事後復盤（`Tier 3`）優先走雲端以略過 8 GB VRAM 卸載等待。無雲端 Key、斷網或超出 `DAILY_BUDGET_USD`（帳本存於 `data/usage-ledger.json`）時自動無縫退回本地 Ollama。
+  - **BYOK 隱私保護**：前端輸入的 Key 僅存於瀏覽器 `localStorage`，透過 Header 傳給本機後端即時轉發，絕不落盤。
+- **低延遲語音問答迴圈：** 按住按鈕或 `Space` 說話 → `faster-whisper`（`large-v3-turbo`, CUDA）辨識日英夾雜技術詞彙 → 串流生成回應 → `VOICEVOX` 逐句合成 WAV 並同步驅動虛擬人嘴型。
+- **三套虛擬面試官引擎（`next/dynamic` 懶載入）：**
+  - **SVG**：輕量 2D 立繪（柴犬部長、Q 版佐藤），支援 Web Audio 口型同步與隨機眨眼。
+  - **3D / VRM**：Three.js + `@pixiv/three-vrm`（30 FPS 節流、`low-power`），內建 3D 角色並支援自訂 `.vrm` 匯入。
+  - **Rive**：`@rive-app/canvas` 狀態機角色（`avatar-pack.riv`、`teddy.riv` 或自訂 `.riv`）。
+- **事後復盤與單一 HTML 匯出：** 四維度評分、日文填充詞（`えー / えっと / あの`）統計、地道敬語朗讀改寫，並可一鍵匯出離線 HTML 報告。
 
 ---
 
 ## 快速開始
 
-### 1. 安裝依賴與下載 Ollama 模型
+### 1. 安裝依賴與拉取本地模型
 
 ```bash
 git clone https://github.com/YozoraRoy/interview-dojo.git
 cd interview-dojo
 pnpm install
 
+# 若需純本地運行，請拉取即時與評分模型
 ollama pull gemma4:e4b
 ollama pull gemma4:12b
 ```
 
-### 2. 建立本地 STT 語音辨識環境
+### 2. 設定本地 STT 服務（`faster-whisper`）
 
 ```bash
 cd services/stt
@@ -78,44 +52,47 @@ python -m venv .venv
 cd ../..
 ```
 
-### 3. 設定外部私人資料夾
-
-**請勿將真實履歷、錄影或 `.env` 放入 git repository。**
+### 3. 設定環境變數與私人資料夾
 
 ```bash
 cp .env.example .env
 ```
 
-編輯 `.env`，將 `PRIVATE_DATA_DIR` 指向 repo **外部** 的資料夾；可參考 `examples/persona.sample.yaml` 在該資料夾建立 `persona.yaml` 填入個人經歷。
+編輯 `.env`，將 `PRIVATE_DATA_DIR` 指向 repo 外部資料夾，並視需要填入外部 LLM API Key 與 `DAILY_BUDGET_USD`。
 
-### 4. 一鍵啟動全部服務（Windows）
+### 4. 一鍵啟動服務
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts/start-all.ps1
+# 一鍵啟動 Ollama + STT + VOICEVOX + Next.js（正式模式，未建置會自動 build）
+pnpm start:all
+
+# 或開發模式：
+pnpm dev:all
+
+# 純雲端 LLM 模式（略過啟動本地 Ollama）：
+powershell -ExecutionPolicy Bypass -File scripts/start-all.ps1 -Mode dev -SkipOllama
 ```
 
-用瀏覽器開啟 **[http://127.0.0.1:3000](http://127.0.0.1:3000)**，選擇面試官聲音後點擊「開始面試」即可開始練習。
+於 Chrome / Edge 開啟 **[http://127.0.0.1:3000](http://127.0.0.1:3000)** 即可開始練習。
 
 ---
 
-## 資安與隱私設計
-
-- **僅限本機連線：** 所有服務皆只監聽 `127.0.0.1`，無任何雲端呼叫或遙測。
-- **`.gitignore` 預設封鎖：** `.env*`（`!.env.example` 除外）、`data/`、`recordings/`、`transcripts/`、`reports/`、`*.webm`、`*.mp4`、`*.wav`、`*.pdf` 與 `models/` 皆預設忽略。
-- **機密掃描：** 已配置 `gitleaks` pre-commit hook 並在發佈前完成全歷史掃描。
-
----
-
-## 測試
+## 測試與建置
 
 ```bash
-node --test server/*.test.ts
+pnpm test            # node --test "src/lib/**/*.test.ts"
+npx tsc --noEmit     # TypeScript 型別檢查
+pnpm build           # Next.js 16.4+ Turbopack 建置
 ```
 
 ---
 
-## 授權與出處標示
+## 📄 授權條款（License）
 
-- **程式碼授權：** [MIT License](LICENSE)
-- **VOICEVOX 出處：** 語音由 [VOICEVOX Engine](https://github.com/VOICEVOX/voicevox_engine) 本地合成。公開或分享音訊時須依官方規範標示角色出處（例如「VOICEVOX:青山龍星」、「VOICEVOX:ずんだもん」），網頁頁尾亦會依所選聲音動態標示。
-- **模型授權：** 依各模型原廠條款（`Gemma` Terms of Use、`Whisper` MIT）。
+本專案採用 **Sustainable Use License 1.0 (SUL)**（與 n8n 相同之 fair-code / source-available 授權模式）：
+
+- ✅ **個人、研究與非商業用途**：免費使用，原始碼公開於 GitHub 供學習與個人練習。
+- ❌ **商業限制**：未經授權不得將本專案或其衍生作品部署為付費商業服務，或轉售予第三方。
+- 🔒 **商業授權**：如有商業使用需求，請開啟 GitHub Issue 或來信聯絡 [service@vestential.com](mailto:service@vestential.com)。
+
+完整條款請參閱 [LICENSE](LICENSE)。
