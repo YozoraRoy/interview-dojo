@@ -14,6 +14,7 @@
     "start": "next start -H 127.0.0.1 -p 3000",
     "dev:all": "powershell -ExecutionPolicy Bypass -File scripts/start-all.ps1 -Mode dev",
     "start:all": "powershell -ExecutionPolicy Bypass -File scripts/start-all.ps1 -Mode start",
+    "stop:all": "powershell -ExecutionPolicy Bypass -File scripts/stop-all.ps1",
     "test": "node --test \"src/lib/**/*.test.ts\""
   },
   "dependencies": {
